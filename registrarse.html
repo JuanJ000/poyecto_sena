@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/jam-icons/css/jam.min.css">
+</head>
+<body>
+     <!-- cabesera (logo y menu de navegacion) -->
+     <header class="heder-principal">
+        <div class="content">
+            <span class="jam jam-menu"></span>
+            <nav class="menu  redes-sociales" >
+                <ul id="menu1">
+                    <li><a href="#" class="jam jam-facebook">Facebook</a></li>
+                    <li><a href="#" class="jam jam-instagram">Instagram</a></li>
+                    <li><a href="#" class="jam jam-whatsapp">WhatsApp</a></li>
+                </ul>
+            </nav>
+
+            <a href="/" class="logo">
+                <img src="" alt="logo">
+            </a>
+
+            <nav class="menu">
+                <ul class="categorias">
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="#">Categoria</a>
+
+                        <ul class="sub-menu">
+
+                            <li><a href="mujer.html"><p>Mujer</p></a>
+                                <ul>
+                                    <li><a href="mujer.html?categoria=ropa-interior">Ropa interior</a></li>
+                                    <li><a href="mujer.html?categoria=jeans">Jeans</a></li>
+                                    <li><a href="mujer.html?categoria=blusas">Blusas</a></li>
+                                    <li><a href="mujer.html?categoria=vestidos">Vestidos</a></li>
+                                 </ul>
+                            </li>
+                            
+
+                            <li><a href="hombre.html"><p>Hombre</p></a>
+                                <ul>
+                                    <li><a href="hombre.html?categoria=jeans">Pantalones</a></li>
+                                    <li><a href="hombre.html?categoria=camisetas">Camisetas</a></li>
+                                    <li><a href="hombre.html?categoria=ropa-interior">Ropa interior</a></li>
+                                </ul>
+                            </li>
+                                
+                                
+                            <li><a href="niño.html"><p>niño</p></a>
+                                <ul>
+                                    <li><a href="niño.html?categoria=jeans">Pantalones</a></li>
+                                    <li><a href="niño.html?categoria=camisetas">Camisetas</a></li>
+                                    <li><a href="niño.html?categoria=ropa-interior">Ropa interior</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    </li>
+                    <li><a href="registrarse.html">Registrarse</a></li>
+                    <li><a href="#">Carrito</a></li>
+                </ul>
+               
+            </nav>
+
+        </div>
+    </header>
+
+    <main>
+        
+        <main class="auth">
+
+    <div class="auth-container">
+
+        <!-- PANEL IZQUIERDO -->
+        <div class="auth-info">
+            <h2>Bienvenido a Tienda X</h2>
+            <p>
+                Crea tu cuenta y accede a ofertas exclusivas,
+                guarda tus productos favoritos y compra más rápido.
+            </p>
+        </div>
+
+        <!-- PANEL FORMULARIOS -->
+        <div class="auth-box">
+
+            <div class="auth-tabs">
+                <button class="tab active" data-form="login">Iniciar sesión</button>
+                <button class="tab" data-form="register">Registrarse</button>
+            </div>
+
+            <!-- LOGIN -->
+            <form class="auth-form active" id="login">
+                <h3>Iniciar sesión</h3>
+
+                <label>Email</label>
+                <input type="email" placeholder="correo@email.com" required>
+
+                <label>Contraseña</label>
+                <input type="password" placeholder="********" required>
+
+                <button type="submit">Entrar</button>
+
+                <p class="auth-extra">¿Olvidaste tu contraseña?</p>
+
+                <p class="auth-error"></p>
+
+            </form>
+
+            <!-- REGISTRO -->
+            <form class="auth-form" id="register">
+                <h3>Crear cuenta</h3>
+
+                <label>Nombre</label>
+                <input type="text" placeholder="Tu nombre" required>
+
+                <label>Email</label>
+                <input type="email" placeholder="correo@email.com" required>
+
+                <label>Contraseña</label>
+                <input type="password" placeholder="********" required>
+
+                <label>Confirmar contraseña</label>
+                <input type="password" placeholder="********" required>
+
+                <button type="submit">Registrarme</button>
+            
+                <p class="auth-error"></p>
+
+            </form>
+
+        </div>
+    </div>
+
+</main>
+
+
+        
+    </main>
+
+    <footer class="footer">
+    <div class="footer-container">
+
+        <!-- Marca -->
+        <div class="footer-col">
+            <h3>Tienda X</h3>
+            <p>
+                Moda actual, calidad garantizada y envíos rápidos.
+                Diseños pensados para cada estilo y ocasión.
+            </p>
+
+            <div class="footer-social">
+                <a href="#"><i class="jam jam-facebook"></i></a>
+                <a href="#"><i class="jam jam-instagram"></i></a>
+                <a href="#"><i class="jam jam-whatsapp"></i></a>
+            </div>
+        </div>
+
+        <!-- Links -->
+        <div class="footer-col">
+            <h4>Enlaces</h4>
+            <ul>
+                <li><a href="#">Inicio</a></li>
+                <li><a href="#">Tienda</a></li>
+                <li><a href="#">Categorías</a></li>
+                <li><a href="#">Contacto</a></li>
+            </ul>
+        </div>
+
+        <!-- Ayuda -->
+        <div class="footer-col">
+            <h4>Ayuda</h4>
+            <ul>
+                <li><a href="#">Preguntas frecuentes</a></li>
+                <li><a href="#">Envíos</a></li>
+                <li><a href="#">Cambios y devoluciones</a></li>
+                <li><a href="#">Políticas</a></li>
+            </ul>
+        </div>
+
+        <!-- Contacto -->
+        <div class="footer-col">
+            <h4>Contacto</h4>
+            <p>📧 contacto@tiendax.com</p>
+            <p>📞 +57 300 000 0000</p>
+            <p>📍 Colombia</p>
+        </div>
+
+    </div>
+
+    <div class="footer-bottom">
+        © 2026 Tienda X — Todos los derechos reservados
+    </div>
+</footer>
+
+    <script src="scripts/menu.js"></script>
+    <script src="scripts/filtros.js"></script>
+
+</body>
+</html>

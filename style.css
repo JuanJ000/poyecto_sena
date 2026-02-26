@@ -1,0 +1,1270 @@
+/* ========================= GENERAL========================= */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* =========================HEADER PRINCIPAL========================= */
+
+.heder-principal {
+    width: 100%;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.heder-principal .content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 15px 20px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    position: relative; /* CLAVE PARA EL MENÚ MOBILE */
+}
+
+/* =========================ICONO HAMBURGUESA========================= */
+
+.jam-menu {
+    display: none;
+    font-size: 32px;
+    cursor: pointer;
+    z-index: 10000;
+}
+
+/* =========================REDES SOCIALES (IZQUIERDA)========================= */
+
+.redes-sociales ul {
+    display: flex;
+    gap: 15px;
+}
+
+.redes-sociales a {
+    font-size: 18px;
+    color: #000;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: color 0.3s ease;
+}
+
+.redes-sociales a:hover {
+    color: #777;
+}
+
+/* =========================LOGO (CENTRO)========================= */
+
+.logo {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.logo img {
+    height: 60px;
+}
+
+/* ========================= MENÚ PRINCIPAL (DERECHA)========================= */
+
+.menu .categorias {
+    display: flex;
+    gap: 25px;
+}
+
+.menu .categorias > li {
+    position: relative;
+}
+
+.menu .categorias > li > a {
+    position: relative;
+    text-decoration: none;
+    color: #000;
+    font-size: 18px;
+    padding: 10px 0;
+    display: block;
+    transition: color 0.3s ease;
+}
+
+/* Línea animada */
+.menu .categorias > li > a::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -5px;
+    width: 0;
+    height: 2px;
+    background: #000;
+    transition: width 0.3s ease;
+}
+
+.menu .categorias > li > a:hover::after {
+    width: 100%;
+}
+
+
+
+
+/* =========================SUBMENÚ (DESKTOP)========================= */
+
+.sub-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #fff;
+    padding: 20px;
+    display: flex;
+    gap: 40px;
+
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+
+    box-shadow: 0 10px 30px rgba(46, 35, 35, 0.1);
+    z-index: 9999;
+}
+
+.categorias li:hover .sub-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.sub-menu p {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.sub-menu li a {
+    color: #000000;
+    text-decoration: none;
+}
+
+.sub-menu ul li a {
+    display: block;
+    text-decoration: none;
+    color: #333;
+    font-size: 14px;
+    margin-bottom: 8px;
+    transition: color 0.3s ease, padding-left 0.3s ease;
+}
+
+.sub-menu ul li a:hover {
+    padding-left: 5px;
+    color: #000;
+}
+
+/* =========================RESPONSIVE (MOBILE)========================= */
+
+@media (max-width: 992px) {
+
+    /* Mostrar hamburguesa */
+    .jam-menu {
+        display: block;
+    }
+
+    /* Ocultar redes */
+    .redes-sociales {
+        display: none;
+    }
+
+    /* Logo normal */
+    .logo {
+        position: static;
+        transform: none;
+    }
+
+    /* Ocultar menú por defecto */
+    nav.menu:not(.redes-sociales) {
+        display: none;
+    }
+
+    /* Mostrar menú al hacer click */
+    nav.menu:not(.redes-sociales).active {
+        display: block;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background: #ffffff;
+        padding: 20px;
+        border-top: 1px solid #e5e5e5;
+        z-index: 9999;
+    }
+
+    .menu .categorias {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .menu .categorias > li > a {
+        font-size: 18px;
+    }
+
+    /* Submenú móvil (oculto por defecto) */
+    .sub-menu {
+        position: static;
+        box-shadow: none;
+        padding: 10px 0;
+        display: none;
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+    }
+}
+
+/* =========================SUBMENÚ MOBILE (CLICK)========================= */
+
+@media (max-width: 992px) {
+
+    .sub-menu {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s ease;
+        display: block;
+    }
+
+    .sub-menu.open {
+        max-height: 600px;
+    }
+
+    .categorias > li > a::before {
+        content: "▸";
+        margin-right: 8px;
+        transition: transform 0.3s ease;
+        display: inline-block;
+    }
+
+    .categorias > li > a.active::before {
+        transform: rotate(90deg);
+    }
+}
+
+
+
+
+
+
+
+
+/* ---------------------------- */
+/* =========================BANNER PRINCIPAL========================= */
+
+.content-w {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 90vh;
+    align-items: center;
+    gap: 40px;
+    padding: 80px 60px;
+    background: #f8f8f8;
+}
+
+/* TEXTO */
+.descripcion h1 {
+    font-size: 52px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    line-height: 1.1;
+}
+
+.descripcion p {
+    font-size: 18px;
+    color: #555;
+    margin-bottom: 30px;
+    max-width: 500px;
+}
+
+/* BOTÓN CTA */
+.descripcion .button a {
+    display: inline-block;
+    padding: 14px 36px;
+    background: #000;
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+.descripcion .button a:hover {
+    background: #333;
+    transform: translateY(-2px);
+}
+/* ------------------------------- */
+/* =========================SLIDER========================= */
+.img_slider {
+    width: 100%;
+    height: 500px;
+    overflow: hidden;
+}
+
+.img_slider ul {
+    display: flex;
+    width: 100%;              
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    animation: sliderPingPong 30s infinite ease-in-out;
+}
+
+.img_slider li {
+    width: 100%;
+    height: 100%;
+    flex-shrink: 0;
+}
+
+.img_slider img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* =========================ANIMACIÓN IDA Y VUELTA========================= */
+
+@keyframes sliderPingPong {
+
+    /* Imagen 1 */
+    0%   { transform: translateX(0); }
+    12%  { transform: translateX(0); }
+
+    /* Imagen 2 */
+    17%  { transform: translateX(-100%); }
+    29%  { transform: translateX(-100%); }
+
+    /* Imagen 3 */
+    34%  { transform: translateX(-200%); }
+    46%  { transform: translateX(-200%); }
+
+    /* Imagen 4 */
+    51%  { transform: translateX(-300%); }
+    63%  { transform: translateX(-300%); }
+
+    /* Regreso */
+    68%  { transform: translateX(-200%); }
+    76%  { transform: translateX(-200%); }
+
+    81%  { transform: translateX(-100%); }
+    89%  { transform: translateX(-100%); }
+
+    94%  { transform: translateX(0); }
+    100% { transform: translateX(0); }
+}
+
+/* =========================RESPONSIVE========================= */
+
+@media (max-width: 992px) {
+
+    .content-w {
+        grid-template-columns: 1fr;
+        padding: 40px 20px;
+        text-align: center;
+    }
+
+    .descripcion h1 {
+        font-size: 36px;
+    }
+
+    .descripcion p {
+        margin: 0 auto 30px;
+    }
+
+    .img_slider {
+        height: 350px;
+    }
+}
+
+
+
+
+
+
+
+/* ------------------------------ */
+
+/* =========================CATEGORÍAS VISUALES========================= */
+
+.content-w2 {
+    padding: 90px 60px;
+    background: #fff;
+}
+
+.categ {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+}
+
+/* CARD BASE */
+.categ > div {
+    position: relative;
+    height: 420px;
+    overflow: hidden;
+    border-radius: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: flex-end;
+    padding: 30px;
+    transition: transform 0.5s ease;
+}
+
+/* FONDOS */
+.con1 { background: url("IMAGENES/mujer.png") center/110% no-repeat; }
+.con2 { background: url("IMAGENES/hombre.jpg") center/110% no-repeat; }
+.con3 { background: url("IMAGENES/niños.jpg") center/110% no-repeat; }
+
+/* OVERLAY */
+.categ > div::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to top,
+        rgba(0,0,0,0.65),
+        rgba(0,0,0,0.15)
+    );
+    transition: background 0.4s ease;
+}
+
+/* TEXTO */
+.categ span {
+    position: relative;
+    color: #fff;
+    font-size: 32px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    z-index: 2;
+    transform: translateY(20px);
+    opacity: 0;
+    transition: all 0.4s ease;
+}
+
+/* BOTÓN */
+.categ a {
+    position: relative;
+    margin-top: 12px;
+    padding: 10px 24px;
+    border: 1px solid #fff;
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+    letter-spacing: 1px;
+    z-index: 2;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.4s ease;
+}
+
+/* HOVER BRUTAL */
+.categ > div:hover {
+    transform: scale(1.05);
+}
+
+.categ > div:hover::before {
+    background: rgba(0,0,0,0.65);
+}
+
+.categ > div:hover span,
+.categ > div:hover a {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* PARALLAX SUAVE */
+.categ > div:hover {
+    background-position: center 40%;
+    transition: background-position 1.2s ease;
+}
+
+/* =========================RESPONSIVE========================= */
+
+@media (max-width: 992px) {
+
+    .content-w2 {
+        padding: 40px 20px;
+    }
+
+    .categ {
+        grid-template-columns: repeat(3, 1fr); /* 🔥 DOS POR FILA */
+        gap: 20px;
+    }
+
+    .categ > div {
+        height: 260px;
+    }
+
+    .categ span {
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .categ {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+
+/* =========================PRODUCTOS DESTACADOS========================= */
+.productos {
+    padding: 90px 60px;
+    background: #f9f9f9;
+}
+
+.productos h2 {
+    text-align: center;
+    font-size: 36px;
+    margin-bottom: 50px;
+}
+
+.productos-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 30px;
+}
+
+/* CARD */
+.producto {
+    background: #fff;
+    border-radius: 14px;
+    overflow: hidden;
+    text-align: center;
+    padding-bottom: 20px;
+    position: relative;
+    transform: translateY(40px);
+    opacity: 0;
+    transition: all 0.6s ease;
+}
+
+/* ANIMACIÓN SCROLL */
+.producto.active {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+/* BADGE */
+.badge {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: #fff;
+    z-index: 3;
+    border-radius: 20px;
+}
+
+.badge.nuevo { background: #000; }
+.badge.oferta { background: #c62828; }
+
+/* IMAGEN DOBLE */
+.img-box {
+    position: relative;
+    height: 320px;
+    overflow: hidden;
+}
+
+.img-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.5s ease;
+}
+
+.img-back {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+}
+
+.producto:hover .img-back {
+    opacity: 1;
+}
+
+.producto:hover .img-front {
+    opacity: 0;
+}
+
+/* TEXTO */
+.producto h3 {
+    margin: 18px 0 8px;
+    font-size: 18px;
+}
+
+.precio {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+/* ACCIONES */
+.acciones {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn {
+    padding: 10px 22px;
+    border: 1px solid #000;
+    color: #000;
+    text-decoration: none;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.cart {
+    border: none;
+    background: #000;
+    color: #fff;
+    font-size: 16px;
+    padding: 10px 14px;
+    cursor: pointer;
+}
+
+.producto:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+}
+
+.producto:hover .btn {
+    background: #000;
+    color: #fff;
+}
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+
+@media (max-width: 1200px) {
+    .productos-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 992px) {
+    .productos { padding: 50px 20px; }
+    .productos-grid { grid-template-columns: repeat(2, 1fr); }
+    .img-box { height: 260px; }
+}
+
+@media (max-width: 480px) {
+    .productos-grid { grid-template-columns: 1fr; }
+}
+
+
+
+/* ---------------------------------------- */
+
+/* ========================= FOOTER ========================= */
+
+.footer {
+    background: #111;
+    color: #ccc;
+    padding-top: 70px;
+}
+
+.footer-container {
+    max-width: 1200px;
+    margin: auto;
+    padding: 0 30px 50px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 40px;
+}
+
+.footer-col h3,
+.footer-col h4 {
+    color: #fff;
+    margin-bottom: 20px;
+}
+
+.footer-col p {
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.footer-col ul {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-col ul li {
+    margin-bottom: 12px;
+}
+
+.footer-col ul li a {
+    color: #ccc;
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.3s ease;
+}
+
+.footer-col ul li a:hover {
+    color: #fff;
+}
+
+/* Redes */
+.footer-social {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.footer-social a {
+    color: #fff;
+    font-size: 20px;
+    transition: transform 0.3s ease;
+}
+
+.footer-social a:hover {
+    transform: translateY(-4px);
+}
+
+/* Bottom */
+.footer-bottom {
+    text-align: center;
+    padding: 20px;
+    border-top: 1px solid #222;
+    font-size: 13px;
+    color: #777;
+}
+
+/* =========================RESPONSIVE FOOTER========================= */
+
+@media (max-width: 992px) {
+    .footer-container {
+        grid-template-columns: repeat(2, 1fr);
+        text-align: center;
+    }
+
+    .footer-social {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .footer-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+
+
+/* ================= pagina de registro ================= */
+
+.auth {
+    min-height: calc(100vh - 160px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    background: #f8f8f8;
+}
+
+.auth-container {
+    max-width: 900px;
+    width: 100%;
+    background: #fff;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,.15);
+}
+
+/* Info */
+.auth-info {
+    background: #111;
+    color: #fff;
+    padding: 60px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.auth-info h2 {
+    font-size: 32px;
+    margin-bottom: 20px;
+}
+
+.auth-info p {
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+/* Caja */
+.auth-box {
+    padding: 50px 40px;
+}
+
+/* Tabs */
+.auth-tabs {
+    display: flex;
+    margin-bottom: 30px;
+    border-bottom: 1px solid #ddd;
+}
+
+.tab {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    background: none;
+    font-size: 16px;
+    cursor: pointer;
+    color: #777;
+}
+
+.tab.active {
+    color: #000;
+    border-bottom: 2px solid #000;
+}
+
+/* Form */
+.auth-form {
+    display: none;
+    animation: fade .4s ease;
+}
+
+.auth-form.active {
+    display: block;
+}
+
+.auth-form h3 {
+    margin-bottom: 25px;
+}
+
+.auth-form label {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.auth-form input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 18px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+}
+
+.auth-form button {
+    width: 100%;
+    padding: 14px;
+    background: #000;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.auth-form button:hover {
+    background: #333;
+}
+
+.auth-extra {
+    margin-top: 15px;
+    font-size: 13px;
+    color: #777;
+    text-align: center;
+    cursor: pointer;
+}
+
+@keyframes fade {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .auth-container {
+        grid-template-columns: 1fr;
+    }
+
+    .auth-info {
+        display: none;
+    }
+}
+
+.auth-error {
+    color: #c62828;
+    font-size: 18px;
+    margin-top: 10px;
+    text-align: center;
+}
+
+
+/* ----------------------productos ---------------------- */
+
+.productos-page {
+    padding: 120px 10%;
+    background: #ffffff;
+}
+
+/* Header */
+.productos-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 60px;
+}
+
+.productos-header h1 {
+    font-size: 36px;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+.filtros select {
+    padding: 12px 20px;
+    border: 1px solid #ddd;
+    background: transparent;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.filtros select:hover {
+    border-color: #000;
+}
+
+/* Grid */
+.productos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 50px 30px;
+}
+
+/* Card */
+.producto-card {
+    background: #fff;
+    overflow: hidden;
+    transition: 0.4s ease;
+}
+
+.producto-card:hover {
+    transform: translateY(-6px);
+}
+
+/* Imagen */
+.producto-img {
+    overflow: hidden;
+}
+
+.producto-img img {
+    width: 100%;
+    height: 420px;
+    object-fit: cover;
+    transition: transform 0.6s ease;
+}
+
+.producto-card:hover img {
+    transform: scale(1.05);
+}
+
+/* Info */
+.producto-info {
+    padding: 25px 5px;
+    text-align: left;
+}
+
+.producto-info h3 {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+.precio {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+/* Botón elegante */
+.producto-info button {
+    background: transparent;
+    border: 1px solid #000;
+    padding: 10px 25px;
+    font-size: 13px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.producto-info button:hover {
+    background: #000;
+    color: #fff;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+
+    .productos-page {
+        padding: 100px 6%;
+    }
+
+    .productos-header {
+        flex-direction: column;
+        gap: 25px;
+        text-align: center;
+    }
+
+    .producto-img img {
+        height: 100px;
+    }
+}
+
+
+.producto-img {
+    position: relative;
+    height: 420px;
+    overflow: hidden;
+}
+
+
+.producto-img img {
+    width: 100%;
+    height: 420px;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.img-hover {
+    opacity: 0;
+}
+
+.producto-card:hover .img-hover {
+    opacity: 1;
+}
+
+.producto-card:hover .img-principal {
+    opacity: 0;
+}
+
+.producto-card:hover img {
+    transform: scale(1.05);
+}
+
+.producto-info button {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.4s ease;
+}
+
+.producto-card:hover .producto-info button {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+
+.producto-img::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0);
+    transition: background 0.4s ease;
+}
+
+.producto-card:hover .producto-img::after {
+    background: rgba(0,0,0,0.1);
+}
+
+
+/* ----------------------------catalogo de hombre, mujer, niño--------------------- */
+
+.catalogo-container {
+    max-width: 1200px;
+    margin: 14px auto 80px auto; /* separa del header */
+    padding: 0 20px;
+    background: #f8f8f8;
+    min-height: 100vh;
+}
+
+.catalogo-titulo {
+    text-align: center;
+    font-size: 2.5rem;
+    margin-bottom: 50px;
+    font-weight: 600;
+}
+
+/* Grid productos */
+.productos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+}
+
+/* Card producto */
+.catalogo-container .producto {
+    background: #fff;
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    
+    /* Forzar visibilidad por si hay animaciones globales */
+    opacity: 1 !important;
+    transform: none !important;
+}
+
+/* Hover elegante */
+.catalogo-container .producto:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 25px rgba(0,0,0,0.12);
+}
+
+/* Imagen */
+.img-box {
+    width: 100%;
+    height: 280px;
+    overflow: hidden;
+    border-radius: 10px;
+    margin-bottom: 15px;
+}
+
+.img-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Precio */
+.precio {
+    font-weight: 600;
+    margin: 10px 0;
+    font-size: 1.1rem;
+}
+
+/* Botón */
+.btn {
+    background: #000;
+    color: #fff;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    background: #333;
+    transform: scale(1.05);
+}
+
+
+@media (max-width: 768px) {
+
+    .catalogo-container {
+        margin: 100px auto 60px auto;
+        padding: 0 12px;
+    }
+
+    .catalogo-titulo {
+        font-size: 1.8rem;
+        margin-bottom: 30px;
+    }
+
+    /* 2 COLUMNAS EN MÓVIL */
+    .productos-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+
+    .catalogo-container .producto {
+        padding: 12px;
+        border-radius: 12px;
+    }
+
+    .img-box {
+        height: 180px;
+        margin-bottom: 10px;
+    }
+
+    .img-box img {
+        height: 180px;
+    }
+
+    .precio {
+        font-size: 1rem;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 8px 0;
+        font-size: 0.9rem;
+    }
+
+}
+
+
+
+
+
+/* =========================
+   FILTROS PROFESIONALES
+========================= */
+
+.filtros {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin: 40px 0;
+    flex-wrap: wrap;
+}
+
+.filtro {
+    padding: 10px 22px;
+    border: 1px solid #000;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 30px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.filtro:hover {
+    background: #000;
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.filtro.activo {
+    background: #000;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* Animación suave de productos */
+
+.producto {
+    transition: all 0.4s ease;
+}
+
+.producto.oculto {
+    opacity: 0;
+    transform: scale(0.9);
+    pointer-events: none;
+    position: absolute;
+    visibility: hidden;
+}
+
+
