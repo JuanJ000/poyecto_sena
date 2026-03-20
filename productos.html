@@ -27,7 +27,7 @@
             <nav class="menu">
                 <ul class="categorias">
                     <li><a href="index.html">Inicio</a></li>
-                    <li><a href="#">Categoria</a>
+                    <li><a href="productos.html">Categoria</a>
 
                         <ul class="sub-menu">
 
@@ -61,7 +61,7 @@
 
                     </li>
                     <li><a href="registrarse.html">Registrarse</a></li>
-                    <li><a href="#">Carrito</a></li>
+                    <li><a href="carito.html">Carrito</a></li>
                 </ul>
                
             </nav>
@@ -97,7 +97,8 @@
                     <div class="producto-info">
                         <h3>Vestido Floral</h3>
                         <p class="precio">$120.000</p>
-                        <button>Agregar al carrito</button>
+                        <button class="cart-btn" onclick="agregarCarrito(this)">🛒</button>
+
                     </div>
                 </div>
 
@@ -110,7 +111,7 @@
                     <div class="producto-info">
                         <h3>Camiseta Oversize</h3>
                         <p class="precio">$80.000</p>
-                        <button>Agregar al carrito</button>
+                        <button class="cart-btn" onclick="agregarCarrito(this)">🛒</button>
                     </div>
                 </div>
 
@@ -123,7 +124,7 @@
                     <div class="producto-info">
                         <h3>Conjunto Infantil</h3>
                         <p class="precio">$95.000</p>
-                        <button>Agregar al carrito</button>
+                        <button class="cart-btn" onclick="agregarCarrito(this)">🛒</button>
                     </div>
                 </div>
 
@@ -136,7 +137,7 @@
                     <div class="producto-info">
                         <h3>Blusa Elegante</h3>
                         <p class="precio">$100.000</p>
-                        <button>Agregar al carrito</button>
+                        <button class="cart-btn" onclick="agregarCarrito(this)">🛒</button>
                     </div>
                 </div>
 
@@ -203,6 +204,7 @@
 
     <script src="scripts/menu.js"></script>
     <script src="scripts/filtros.js"></script>
+    <script src="scripts/carrito-add.js"></script>
 
 </body>
 </html>
