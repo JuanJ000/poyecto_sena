@@ -64,11 +64,61 @@ tabs.forEach(tab => {
 });
 
 
+
 // ================= AUTH =================
 
 const loginForm = document.getElementById("login");
 const registerForm = document.getElementById("register");
 
+if (registerForm) {
+  registerForm.addEventListener("submit", async e => {
+    e.preventDefault();
+    const error = registerForm.querySelector(".auth-error");
+
+    const nombre  = registerForm.querySelector("input[type=text]").value.trim();
+    const email   = registerForm.querySelector("input[type=email]").value.trim();
+    const pass    = registerForm.querySelectorAll("input[type=password]")[0].value;
+    const confirm = registerForm.querySelectorAll("input[type=password]")[1].value;
+
+    if (pass !== confirm) return (error.textContent = "Las contraseñas no coinciden");
+
+    const res  = await fetch("http://localhost:3000/api/registrarse", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nombre, email, password: pass })
+    });
+    const data = await res.json();
+
+    if (!res.ok) return (error.textContent = data.error);
+
+    error.style.color = "green";
+    error.textContent = data.mensaje;
+    registerForm.reset();
+  });
+}
+
+if (loginForm) {
+  loginForm.addEventListener("submit", async e => {
+    e.preventDefault();
+    const error = loginForm.querySelector(".auth-error");
+
+    const email = loginForm.querySelector("input[type=email]").value.trim();
+    const pass  = loginForm.querySelector("input[type=password]").value;
+
+    const res  = await fetch("http://localhost:3000/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password: pass })
+    });
+    const data = await res.json();
+
+    if (!res.ok) return (error.textContent = data.error);
+
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("nombre", data.nombre);
+    window.location.href = "index.html";
+  });
+}
 // ===== REGISTRO =====
 registerForm.addEventListener("submit", e => {
     e.preventDefault();
