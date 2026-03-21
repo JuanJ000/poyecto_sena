@@ -1,0 +1,40 @@
+{
+  "productos": [
+    {
+      "id": 1,
+      "nombre": "Blusa Elegante",
+      "categoria": "blusas",
+      "precio": 85000,
+      "rating": 5,
+      "imagen_front": "https://picsum.photos/400/500?11",
+      "imagen_back": "https://picsum.photos/400/500?12"
+    },
+    {
+      "id": 2,
+      "nombre": "Jeans Skinny",
+      "categoria": "jeans",
+      "precio": 95000,
+      "rating": 4,
+      "imagen_front": "https://picsum.photos/400/500?13",
+      "imagen_back": "https://picsum.photos/400/500?14"
+    },
+    {
+      "id": 3,
+      "nombre": "Vestido Floral",
+      "categoria": "vestidos",
+      "precio": 120000,
+      "rating": 5,
+      "imagen_front": "https://picsum.photos/400/500?15",
+      "imagen_back": "https://picsum.photos/400/500?16"
+    },
+    {
+      "id": 4,
+      "nombre": "Ropa Interior Cómoda",
+      "categoria": "ropa-interior",
+      "precio": 55000,
+      "rating": 4,
+      "imagen_front": "https://picsum.photos/400/500?17",
+      "imagen_back": "https://picsum.photos/400/500?18"
+    }
+  ]
+}
