@@ -1,6 +1,6 @@
 # 📝 Sistema de Productos Dinámicos
 
-## ¿Cómo funciona?
+## ¿Cómo funciona
 
 Tu tienda ahora carga productos automáticamente desde archivos JSON. **No necesitas editar el HTML para agregar productos**.
 
