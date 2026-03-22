@@ -82,8 +82,12 @@ function actualizarMenuSesion() {
 
 
 function cerrarSesion() {
+    // Solo limpiar localStorage — el carrito se queda en MongoDB
+    // para que al volver a iniciar sesión el usuario lo recupere
     localStorage.removeItem("token");
     localStorage.removeItem("nombre");
+    localStorage.removeItem("carrito");
+
     window.location.href = "index.html";
 }
 
@@ -213,6 +217,17 @@ if (loginForm) {
             // Guardar sesión
             localStorage.setItem("token",  data.token);
             localStorage.setItem("nombre", data.nombre);
+
+            // Cargar carrito guardado desde MongoDB
+            try {
+                const resCarrito = await fetch("http://localhost:3000/api/carrito", {
+                    headers: { "Authorization": `Bearer ${data.token}` }
+                });
+                const itemsDB = await resCarrito.json();
+                if (Array.isArray(itemsDB) && itemsDB.length > 0) {
+                    localStorage.setItem("carrito", JSON.stringify(itemsDB));
+                }
+            } catch (e) {}
 
             window.location.href = "index.html";
 

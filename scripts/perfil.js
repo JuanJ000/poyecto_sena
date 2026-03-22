@@ -72,6 +72,13 @@ async function cargarPedidos() {
             const fecha = new Date(p.fecha).toLocaleDateString("es-CO", { year: "numeric", month: "short", day: "numeric" });
             const items = p.items.map(i => `<span class="pedido-item-chip">${i.nombre} x${i.cantidad}</span>`).join("");
             const total = p.items.reduce((acc, i) => acc + i.precio * i.cantidad, 0);
+            const envio = p.envio ? `
+                <div style="margin-top:0.5rem; font-size:0.83rem; color:#666; line-height:1.6;">
+                    📍 ${p.envio.direccion}, ${p.envio.ciudad}, ${p.envio.departamento}<br>
+                    👤 ${p.envio.nombre} — 📞 ${p.envio.telefono}<br>
+                    💳 ${p.metodoPago || "—"}
+                    ${p.notas ? `<br>📝 ${p.notas}` : ""}
+                </div>` : "";
             return `
                 <div class="pedido-card">
                     <div class="pedido-header">
@@ -80,7 +87,8 @@ async function cargarPedidos() {
                         <span class="pedido-estado ${p.estado}">${p.estado}</span>
                     </div>
                     <div class="pedido-items">${items}</div>
-                    <p class="pedido-total">Total: $${total.toLocaleString("es-CO")}</p>
+                    ${envio}
+                    <p class="pedido-total" style="margin-top:0.75rem;">Total: $${total.toLocaleString("es-CO")}</p>
                 </div>
             `;
         }).join("");

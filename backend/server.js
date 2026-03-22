@@ -55,6 +55,19 @@ app.post('/api/login', async (req, res) => {
   res.json({ token, nombre: usuario.nombre });
 });
 
+app.listen(process.env.PORT, () => {
+  console.log(`🚀 Servidor corriendo en http://localhost:${process.env.PORT}`);
+});
+
+
+
+
+// =============================================
+// AGREGA ESTE CÓDIGO A TU backend/server.js
+// Pégalo después de la ruta de /api/login
+// =============================================
+
+
 // ─── MIDDLEWARE: verificar token ────────────
 function verificarToken(req, res, next) {
     const authHeader = req.headers["authorization"];
@@ -104,9 +117,39 @@ const favoritoSchema = new mongoose.Schema({
     categoria:    String
 });
 
+const carritoSchema = new mongoose.Schema({
+    usuario: { type: mongoose.Schema.Types.ObjectId, ref: "Usuario", required: true, unique: true },
+    items: [{ nombre: String, precio: Number, cantidad: Number, img: String }],
+    actualizadoEn: { type: Date, default: Date.now }
+});
+
 const Pedido    = mongoose.model("Pedido",    pedidoSchema);
 const Direccion = mongoose.model("Direccion", direccionSchema);
 const Favorito  = mongoose.model("Favorito",  favoritoSchema);
+const Carrito   = mongoose.model("Carrito",   carritoSchema);
+
+// ─── RUTA: GET carrito ──────────────────────
+app.get("/api/carrito", verificarToken, async (req, res) => {
+    const c = await Carrito.findOne({ usuario: req.userId });
+    res.json(c ? c.items : []);
+});
+
+// ─── RUTA: PUT carrito (guardar) ────────────
+app.put("/api/carrito", verificarToken, async (req, res) => {
+    const { items } = req.body;
+    await Carrito.findOneAndUpdate(
+        { usuario: req.userId },
+        { items, actualizadoEn: new Date() },
+        { upsert: true, new: true }
+    );
+    res.json({ mensaje: "Carrito guardado" });
+});
+
+// ─── RUTA: DELETE carrito (vaciar) ──────────
+app.delete("/api/carrito", verificarToken, async (req, res) => {
+    await Carrito.findOneAndDelete({ usuario: req.userId });
+    res.json({ mensaje: "Carrito vaciado" });
+});
 
 
 // ─── RUTA: GET perfil ───────────────────────
@@ -211,12 +254,4 @@ app.post("/api/favoritos", verificarToken, async (req, res) => {
 app.delete("/api/favoritos/:id", verificarToken, async (req, res) => {
     await Favorito.findOneAndDelete({ _id: req.params.id, usuario: req.userId });
     res.json({ mensaje: "Favorito eliminado" });
-});
-
-
-// ══════════════════════════════════════════════
-// INICIAR SERVIDOR
-// ══════════════════════════════════════════════
-app.listen(process.env.PORT, () => {
-    console.log(`🚀 Servidor corriendo en http://localhost:${process.env.PORT}`);
 });
