@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil — Tienda X</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/jam-icons/css/jam.min.css">
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="heder-principal">
+        <div class="content">
+            <span class="jam jam-menu"></span>
+            <nav class="menu redes-sociales">
+                <ul id="menu1">
+                    <li><a href="#" class="jam jam-facebook">Facebook</a></li>
+                    <li><a href="#" class="jam jam-instagram">Instagram</a></li>
+                    <li><a href="#" class="jam jam-whatsapp">WhatsApp</a></li>
+                </ul>
+            </nav>
+            <a href="/" class="logo"><img src="" alt="logo"></a>
+            <nav class="menu">
+                <ul class="categorias">
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="productos.html">Categoria</a>
+                        <ul class="sub-menu">
+                            <li><a href="mujer.html"><p>Mujer</p></a>
+                                <ul>
+                                    <li><a href="mujer.html?categoria=ropa-interior">Ropa interior</a></li>
+                                    <li><a href="mujer.html?categoria=jeans">Jeans</a></li>
+                                    <li><a href="mujer.html?categoria=blusas">Blusas</a></li>
+                                    <li><a href="mujer.html?categoria=vestidos">Vestidos</a></li>
+                                </ul>
+                            </li>
+                            <li><a href="hombre.html"><p>Hombre</p></a>
+                                <ul>
+                                    <li><a href="hombre.html?categoria=jeans">Pantalones</a></li>
+                                    <li><a href="hombre.html?categoria=camisetas">Camisetas</a></li>
+                                    <li><a href="hombre.html?categoria=ropa-interior">Ropa interior</a></li>
+                                </ul>
+                            </li>
+                            <li><a href="niño.html"><p>Niño</p></a>
+                                <ul>
+                                    <li><a href="niño.html?categoria=jeans">Pantalones</a></li>
+                                    <li><a href="niño.html?categoria=camisetas">Camisetas</a></li>
+                                    <li><a href="niño.html?categoria=ropa-interior">Ropa interior</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li><a href="registrarse.html">Registrarse</a></li>
+                    <li><a href="carito.html">Carrito</a></li>
+                    <!-- <li><a href="perfil.html">Mi perfil</a></li> -->
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="perfil-wrapper">
+
+        <!-- HEADER PERFIL -->
+        <div class="perfil-header">
+            <div class="perfil-avatar" id="avatar-iniciales">?</div>
+            <div class="perfil-header-info">
+                <h1 id="perfil-nombre">Cargando...</h1>
+                <p id="perfil-email">—</p>
+                <button class="perfil-editar" id="btn-abrir-modal">✏️ Editar perfil</button>
+            </div>
+        </div>
+
+        <!-- TABS -->
+        <div class="perfil-tabs">
+            <button class="perfil-tab activo" data-tab="datos">Datos personales</button>
+            <button class="perfil-tab" data-tab="pedidos">Pedidos</button>
+            <button class="perfil-tab" data-tab="direcciones">Direcciones</button>
+            <button class="perfil-tab" data-tab="favoritos">Favoritos</button>
+        </div>
+
+        <!-- SECCIÓN: DATOS PERSONALES -->
+        <section class="perfil-seccion activa" id="sec-datos">
+            <div class="datos-grid">
+                <div class="dato-campo">
+                    <label>Nombre</label>
+                    <input type="text" id="input-nombre" disabled>
+                </div>
+                <div class="dato-campo">
+                    <label>Email</label>
+                    <input type="email" id="input-email" disabled>
+                </div>
+                <div class="dato-campo">
+                    <label>Miembro desde</label>
+                    <input type="text" id="input-fecha" disabled>
+                </div>
+                <div class="dato-campo">
+                    <label>Total de pedidos</label>
+                    <input type="text" id="input-pedidos" disabled>
+                </div>
+            </div>
+            <p class="dato-msg" id="datos-msg"></p>
+        </section>
+
+        <!-- SECCIÓN: PEDIDOS -->
+        <section class="perfil-seccion" id="sec-pedidos">
+            <div class="pedidos-lista" id="pedidos-lista">
+                <div class="vacio">⏳ <p>Cargando pedidos...</p></div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN: DIRECCIONES -->
+        <section class="perfil-seccion" id="sec-direcciones">
+            <div class="direcciones-grid" id="direcciones-grid">
+                <div class="vacio">⏳ <p>Cargando direcciones...</p></div>
+            </div>
+
+            <div class="nueva-dir-form">
+                <h3>+ Agregar nueva dirección</h3>
+                <div class="form-row">
+                    <input type="text" id="dir-nombre" placeholder="Nombre (ej: Casa)">
+                    <input type="text" id="dir-destinatario" placeholder="Destinatario">
+                </div>
+                <div class="form-row">
+                    <input type="text" id="dir-calle" placeholder="Dirección / Calle">
+                    <input type="text" id="dir-ciudad" placeholder="Ciudad">
+                </div>
+                <div class="form-row">
+                    <input type="text" id="dir-departamento" placeholder="Departamento">
+                    <input type="text" id="dir-telefono" placeholder="Teléfono">
+                </div>
+                <button class="btn-agregar-dir" id="btn-agregar-dir">Guardar dirección</button>
+                <p class="dir-msg" id="dir-msg"></p>
+            </div>
+        </section>
+
+        <!-- SECCIÓN: FAVORITOS -->
+        <section class="perfil-seccion" id="sec-favoritos">
+            <div class="favoritos-grid" id="favoritos-grid">
+                <div class="vacio">⏳ <p>Cargando favoritos...</p></div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- MODAL EDITAR PERFIL -->
+    <div class="modal-overlay" id="modal-editar">
+        <div class="modal-box">
+            <h3>Editar perfil</h3>
+            <input type="text" id="modal-nombre" placeholder="Nombre">
+            <input type="email" id="modal-email" placeholder="Email">
+            <input type="password" id="modal-pass-actual" placeholder="Contraseña actual (requerida)">
+            <input type="password" id="modal-pass-nueva" placeholder="Nueva contraseña (opcional)">
+            <p class="modal-error" id="modal-error"></p>
+            <div class="modal-acciones">
+                <button class="btn-modal-cancel" id="btn-cerrar-modal">Cancelar</button>
+                <button class="btn-modal-save" id="btn-guardar-modal">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h3>Tienda X</h3>
+                <p>Moda actual, calidad garantizada y envíos rápidos.</p>
+                <div class="footer-social">
+                    <a href="#"><i class="jam jam-facebook"></i></a>
+                    <a href="#"><i class="jam jam-instagram"></i></a>
+                    <a href="#"><i class="jam jam-whatsapp"></i></a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h4>Enlaces</h4>
+                <ul>
+                    <li><a href="#">Inicio</a></li>
+                    <li><a href="#">Tienda</a></li>
+                    <li><a href="#">Categorías</a></li>
+                    <li><a href="#">Contacto</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Ayuda</h4>
+                <ul>
+                    <li><a href="#">Preguntas frecuentes</a></li>
+                    <li><a href="#">Envíos</a></li>
+                    <li><a href="#">Cambios y devoluciones</a></li>
+                    <li><a href="#">Políticas</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Contacto</h4>
+                <p>📧 contacto@tiendax.com</p>
+                <p>📞 +57 300 000 0000</p>
+                <p>📍 Colombia</p>
+            </div>
+        </div>
+        <div class="footer-bottom">© 2026 Tienda X — Todos los derechos reservados</div>
+    </footer>
+
+    <script src="scripts/menu.js"></script>
+    <script src="scripts/perfil.js"></script>
+
+</body>
+</html>

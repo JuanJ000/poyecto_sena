@@ -1,0 +1,40 @@
+{
+  "productos": [
+    {
+      "id": 1,
+      "nombre": "Camiseta Dinosaurio",
+      "categoria": "camisetas",
+      "precio": 45000,
+      "rating": 5,
+      "imagen_front": "https://picsum.photos/400/500?19",
+      "imagen_back": "https://picsum.photos/400/500?20"
+    },
+    {
+      "id": 2,
+      "nombre": "Pantalones Cómodos",
+      "categoria": "jeans",
+      "precio": 65000,
+      "rating": 4,
+      "imagen_front": "https://picsum.photos/400/500?21",
+      "imagen_back": "https://picsum.photos/400/500?22"
+    },
+    {
+      "id": 3,
+      "nombre": "Sudadera Colores",
+      "categoria": "camisetas",
+      "precio": 70000,
+      "rating": 4,
+      "imagen_front": "https://picsum.photos/400/500?23",
+      "imagen_back": "https://picsum.photos/400/500?24"
+    },
+    {
+      "id": 4,
+      "nombre": "Boxer Niño",
+      "categoria": "ropa-interior",
+      "precio": 35000,
+      "rating": 5,
+      "imagen_front": "https://picsum.photos/400/500?25",
+      "imagen_back": "https://picsum.photos/400/500?26"
+    }
+  ]
+}

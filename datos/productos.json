@@ -1,0 +1,134 @@
+{
+  "productos": [
+    {
+      "id": 1,
+      "nombre": "Camiseta Oversize",
+      "categoria": "camisetas",
+      "genero": "hombre",
+      "precio": 75000,
+      "rating": 4,
+      "imagen_front": "https://picsum.photos/400/500?1",
+      "imagen_back": "https://picsum.photos/400/500?2"
+    },
+    {
+      "id": 2,
+      "nombre": "Jeans Slim Fit",
+      "categoria": "jeans",
+      "genero": "hombre",
+      "precio": 120000,
+      "rating": 5,
+      "imagen_front": "https://picsum.photos/400/500?3",
+      "imagen_back": "https://picsum.photos/400/500?4"
+    },
+    {
+      "id": 3,
+      "nombre": "Chaqueta Denim",
+      "categoria": "camisetas",
+      "genero": "hombre",
+      "precio": 180000,
+      "rating": 4,
+      "imagen_front": "https://picsum.photos/400/500?5",
+      "imagen_back": "https://picsum.photos/400/500?6"
+    },
+    {
+      "id": 4,
+      "nombre": "Sudadera Premium",
+      "categoria": "camisetas",
+      "genero": "hombre",
+      "precio": 95000,
+      "rating": 4,
+      "imagen_front": "https://picsum.photos/400/500?7",
+      "imagen_back": "https://picsum.photos/400/500?8"
+    },
+    {
+      "id": 5,
+      "nombre": "Boxer Sport",
+      "categoria": "ropa-interior",
+      "genero": "hombre",
+      "precio": 45000,
+      "rating": 5,
+      "imagen_front": "https://picsum.photos/400/500?9",
+      "imagen_back": "https://picsum.photos/400/500?10"
+    },
+    {
+      "id": 6,
+      "nombre": "Blusa Elegante",
+      "categoria": "blusas",
+      "genero": "mujer",
+      "precio": 85000,
+      "rating": 5,
+      "imagen_front": "https://picsum.photos/400/500?11",
+      "imagen_back": "https://picsum.photos/400/500?12"
+    },
+    {
+      "id": 7,
+      "nombre": "Jeans Skinny",
+      "categoria": "jeans",
+      "genero": "mujer",
+      "precio": 95000,
+      "rating": 4,
+      "imagen_front": "https://picsum.photos/400/500?13",
+      "imagen_back": "https://picsum.photos/400/500?14"
+    },
+    {
+      "id": 8,
+      "nombre": "Vestido Floral",
+      "categoria": "vestidos",
+      "genero": "mujer",
+      "precio": 120000,
+      "rating": 5,
+      "imagen_front": "https://picsum.photos/400/500?15",
+      "imagen_back": "https://picsum.photos/400/500?16"
+    },
+    {
+      "id": 9,
+      "nombre": "Ropa Interior Cómoda",
+      "categoria": "ropa-interior",
+      "genero": "mujer",
+      "precio": 55000,
+      "rating": 4,
+      "imagen_front": "https://picsum.photos/400/500?17",
+      "imagen_back": "https://picsum.photos/400/500?18"
+    },
+    {
+      "id": 10,
+      "nombre": "Camiseta Dinosaurio",
+      "categoria": "camisetas",
+      "genero": "niño",
+      "precio": 45000,
+      "rating": 5,
+      "imagen_front": "https://picsum.photos/400/500?19",
+      "imagen_back": "https://picsum.photos/400/500?20"
+    },
+    {
+      "id": 11,
+      "nombre": "Pantalones Cómodos",
+      "categoria": "jeans",
+      "genero": "niño",
+      "precio": 65000,
+      "rating": 4,
+      "imagen_front": "https://picsum.photos/400/500?21",
+      "imagen_back": "https://picsum.photos/400/500?22"
+    },
+    {
+      "id": 12,
+      "nombre": "Sudadera Colores",
+      "categoria": "camisetas",
+      "genero": "niño",
+      "precio": 70000,
+      "rating": 4,
+      "imagen_front": "https://picsum.photos/400/500?23",
+      "imagen_back": "https://picsum.photos/400/500?24"
+    },
+    {
+      "id": 13,
+      "nombre": "Boxer Niño",
+      "categoria": "ropa-interior",
+      "genero": "niño",
+      "precio": 35000,
+      "rating": 5,
+      "imagen_front": "https://picsum.photos/400/500?25",
+      "imagen_back": "https://picsum.photos/400/500?26"
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "productos": [
+    {
+      "id": 1,
+      "nombre": "Camiseta Oversize",
+      "categoria": "camisetas",
+      "precio": 75000,
+      "rating": 4,
+      "imagen_front": "https://picsum.photos/400/500?1",
+      "imagen_back": "https://picsum.photos/400/500?2"
+    },
+    {
+      "id": 2,
+      "nombre": "Jeans Slim Fit",
+      "categoria": "jeans",
+      "precio": 120000,
+      "rating": 5,
+      "imagen_front": "https://picsum.photos/400/500?3",
+      "imagen_back": "https://picsum.photos/400/500?4"
+    },
+    {
+      "id": 3,
+      "nombre": "Chaqueta Denim",
+      "categoria": "camisetas",
+      "precio": 180000,
+      "rating": 4,
+      "imagen_front": "https://picsum.photos/400/500?5",
+      "imagen_back": "https://picsum.photos/400/500?6"
+    },
+    {
+      "id": 4,
+      "nombre": "Sudadera Premium",
+      "categoria": "camisetas",
+      "precio": 95000,
+      "rating": 4,
+      "imagen_front": "https://picsum.photos/400/500?7",
+      "imagen_back": "https://picsum.photos/400/500?8"
+    },
+    {
+      "id": 5,
+      "nombre": "Boxer Sport",
+      "categoria": "ropa-interior",
+      "precio": 45000,
+      "rating": 5,
+      "imagen_front": "https://picsum.photos/400/500?9",
+      "imagen_back": "https://picsum.photos/400/500?10"
+    }
+  ]
+}
