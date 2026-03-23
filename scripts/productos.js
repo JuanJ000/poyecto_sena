@@ -1,71 +1,108 @@
 // =============================================
 // productos.js — Catálogo + Modal + Reseñas
+// Carga desde MongoDB (admin) o JSON (fallback)
 // =============================================
 
-const PROD_API = "http://localhost:3000/api";
+const PROD_API = 'http://localhost:3000/api';
 
 const TALLAS = {
-    "jeans":         ["28","30","32","34","36","38"],
-    "camisetas":     ["XS","S","M","L","XL","XXL"],
-    "blusas":        ["XS","S","M","L","XL"],
-    "vestidos":      ["XS","S","M","L","XL"],
-    "ropa-interior": ["S","M","L","XL"],
-    "default":       ["S","M","L","XL"]
+    'jeans':         ['28','30','32','34','36','38'],
+    'camisetas':     ['XS','S','M','L','XL','XXL'],
+    'blusas':        ['XS','S','M','L','XL'],
+    'vestidos':      ['XS','S','M','L','XL'],
+    'ropa-interior': ['S','M','L','XL'],
+    'default':       ['S','M','L','XL']
 };
-
-const COLORES = [
-    { nombre:"Negro",  hex:"#2C2C2C" },
-    { nombre:"Blanco", hex:"#F5F5F0" },
-    { nombre:"Rosa",   hex:"#F4A7B9" },
-    { nombre:"Beige",  hex:"#E8D5B7" },
-    { nombre:"Azul",   hex:"#7BA7D4" },
-    { nombre:"Verde",  hex:"#8DC99A" },
-];
 
 const DESCRIPCIONES = {
-    "jeans":         "Jeans de corte moderno confeccionados con denim de alta calidad. Versátil y perfecto para el día a día.",
-    "camisetas":     "Prenda en algodón 100% natural, suave al tacto y con excelente transpirabilidad.",
-    "blusas":        "Blusa de diseño elegante con caída perfecta, ideal para ocasiones formales y casuales.",
-    "vestidos":      "Vestido de silueta favorecedora con tela de alta calidad y diseño atemporal.",
-    "ropa-interior": "Confeccionada en algodón suave, costuras planas anti-irritación para máxima comodidad.",
-    "default":       "Prenda de alta calidad con diseño cuidado al detalle y materiales seleccionados."
+    'jeans':         'Jeans de corte moderno confeccionados con denim de alta calidad. Versátil y perfecto para el día a día.',
+    'camisetas':     'Prenda en algodón 100% natural, suave al tacto y con excelente transpirabilidad.',
+    'blusas':        'Blusa de diseño elegante con caída perfecta, ideal para ocasiones formales y casuales.',
+    'vestidos':      'Vestido de silueta favorecedora con tela de alta calidad y diseño atemporal.',
+    'ropa-interior': 'Confeccionada en algodón suave, costuras planas anti-irritación para máxima comodidad.',
+    'default':       'Prenda de alta calidad con diseño cuidado al detalle y materiales seleccionados.'
 };
 
-let todosLosProductos = [];
+let todosLosProductos  = [];
 let favoritosActuales  = [];
 let productoActual     = null;
 let tallaSeleccionada  = null;
-let colorSeleccionado  = null;
 let estrellasSeleccionadas = 0;
 
 
 // ─── CARGAR PRODUCTOS ────────────────────────
-async function cargarProductos(categoria) {
+// Intenta MongoDB primero, si no hay usa JSON
+async function cargarProductos(genero) {
     try {
-        const res  = await fetch(`datos/${categoria}.json`);
-        if (!res.ok) throw new Error("No encontrado");
-        const data = await res.json();
-        return data.productos;
+        // 1. Intentar cargar desde MongoDB
+        const res = await fetch(`${PROD_API}/productos/${genero}`);
+        if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data) && data.length > 0) {
+                return data.map((p, i) => ({
+                    id:           p._id,
+                    nombre:       p.nombre,
+                    categoria:    p.categoria,
+                    genero:       p.genero,
+                    precio:       p.precio,
+                    rating:       p.rating || 5,
+                    imagen_front: p.imagen_front || `https://picsum.photos/400/500?${i+1}`,
+                    imagen_back:  p.imagen_back  || `https://picsum.photos/400/500?${i+2}`,
+                    descripcion:  p.descripcion  || ''
+                }));
+            }
+        }
     } catch (e) {
-        console.error(`Error cargando ${categoria}:`, e);
+        console.warn('MongoDB no disponible, usando JSON local');
+    }
+
+    // 2. Fallback: cargar desde JSON local
+    // Para 'todos' combinar los 3 JSONs disponibles
+    if (genero === 'todos') {
+        try {
+            const generos = ['hombre', 'mujer', 'niño'];
+            const resultados = await Promise.all(
+                generos.map(async g => {
+                    try {
+                        const r    = await fetch(`datos/${g}.json`);
+                        const data = await r.json();
+                        return (data.productos || []).map(p => ({ ...p, genero: g }));
+                    } catch { return []; }
+                })
+            );
+            return resultados.flat();
+        } catch (e) {
+            console.error('Error cargando todos los productos:', e);
+            return [];
+        }
+    }
+
+    // Para géneros individuales
+    try {
+        const res  = await fetch(`datos/${genero}.json`);
+        if (!res.ok) throw new Error('No encontrado');
+        const data = await res.json();
+        return data.productos || [];
+    } catch (e) {
+        console.error(`Error cargando productos de ${genero}:`, e);
         return [];
     }
 }
 
 // ─── OBTENER FAVORITOS ───────────────────────
 async function obtenerFavoritos() {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem('token');
     if (!token) return [];
     try {
         const res  = await fetch(`${PROD_API}/favoritos`, {
-            headers: { "Authorization": `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
         return Array.isArray(data) ? data.map(f => f.nombre) : [];
     } catch { return []; }
 }
 
-// ─── CARGAR RESEÑAS DESDE MONGODB ────────────
+// ─── CARGAR RESEÑAS ──────────────────────────
 async function cargarResenas(productoNombre) {
     try {
         const res  = await fetch(`${PROD_API}/resenas/${encodeURIComponent(productoNombre)}`);
@@ -74,77 +111,83 @@ async function cargarResenas(productoNombre) {
     } catch { return []; }
 }
 
+// ─── PARSEAR JWT ─────────────────────────────
+function parseJWT(token) {
+    try { return JSON.parse(atob(token.split('.')[1])); }
+    catch { return null; }
+}
+
 // ─── RENDERIZAR RESEÑAS ──────────────────────
 function renderizarResenas(resenas, productoNombre) {
-    const token        = localStorage.getItem("token");
-    const userId       = token ? parseJWT(token)?.id : null;
-    const yaReseñó     = resenas.some(r => r.usuario === userId);
+    const token    = localStorage.getItem('token');
+    const userId   = token ? parseJWT(token)?.id : null;
+    const yaReseñó = resenas.some(r => r.usuario === userId);
 
     const listaHTML = resenas.length === 0
-        ? `<p style="color:#A08070;font-size:0.88rem;text-align:center;padding:1rem 0;">
+        ? `<p style="color:#888;font-size:0.88rem;text-align:center;padding:1rem 0;">
             Sé el primero en dejar una reseña ✨</p>`
         : resenas.map(r => {
-            const fecha  = new Date(r.fecha).toLocaleDateString("es-CO", { year:"numeric", month:"short", day:"numeric" });
+            const fecha    = new Date(r.fecha).toLocaleDateString('es-CO', { year:'numeric', month:'short', day:'numeric' });
             const esPropia = r.usuario === userId;
             return `
             <div class="mp-resena" style="position:relative;">
-                <div style="display:flex;justify-content:space-between;align-items:start;">
+                <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:4px;">
                     <div>
-                        <strong>${r.nombreUsuario}</strong>
-                        <span class="mp-resena-stars">${"★".repeat(r.estrellas)}${"☆".repeat(5 - r.estrellas)}</span>
+                        <strong style="font-size:0.85rem;">${r.nombreUsuario}</strong>
+                        <span class="mp-resena-stars" style="margin-left:6px;">
+                            ${'★'.repeat(r.estrellas)}${'☆'.repeat(5 - r.estrellas)}
+                        </span>
                     </div>
-                    <span style="font-size:0.75rem;color:#C0A090;">${fecha}</span>
+                    <span style="font-size:0.75rem;color:#bbb;">${fecha}</span>
                 </div>
-                <p style="margin:4px 0 0;font-size:0.85rem;color:#7A5C50;">${r.comentario}</p>
-                ${esPropia ? `<button onclick="eliminarResena('${r._id}', '${productoNombre}')"
+                <p style="margin:5px 0 0;font-size:0.85rem;color:#666;line-height:1.5;">${r.comentario}</p>
+                ${esPropia ? `
+                <button onclick="eliminarResena('${r._id}','${productoNombre}')"
                     style="position:absolute;top:8px;right:8px;background:none;border:none;
-                    font-size:0.75rem;color:#ccc;cursor:pointer;" title="Eliminar mi reseña">✕</button>` : ""}
+                    font-size:0.75rem;color:#ccc;cursor:pointer;" title="Eliminar mi reseña">✕</button>` : ''}
             </div>`;
-        }).join("");
+        }).join('');
 
-    // Promedio de estrellas
     const promedio = resenas.length
         ? (resenas.reduce((a, r) => a + r.estrellas, 0) / resenas.length).toFixed(1)
-        : "—";
+        : '—';
 
-    // Formulario solo si hay sesión y no ha reseñado
     const formulario = !token
-        ? `<p style="font-size:0.83rem;color:#A08070;text-align:center;padding:0.75rem;
-            background:#FDF0F5;border-radius:10px;">
-            <a href="registrarse.html" style="color:#E07A95;font-weight:700;">Inicia sesión</a>
+        ? `<p style="font-size:0.83rem;color:#888;text-align:center;padding:0.75rem;
+            background:#f9f9f9;border-radius:10px;margin-top:0.5rem;">
+            <a href="registrarse.html" style="color:#111;font-weight:700;">Inicia sesión</a>
             para dejar una reseña</p>`
         : yaReseñó
-        ? `<p style="font-size:0.83rem;color:#A08070;text-align:center;">Ya dejaste una reseña ✅</p>`
+        ? `<p style="font-size:0.83rem;color:#888;text-align:center;margin-top:0.5rem;">
+            Ya dejaste una reseña ✅</p>`
         : `
-        <div style="background:#FDF0F5;border-radius:14px;padding:1rem;margin-top:0.5rem;">
-            <p style="font-size:0.82rem;font-weight:700;color:#A08070;margin:0 0 0.6rem;
+        <div style="background:#f9f9f9;border-radius:12px;padding:1rem;margin-top:0.75rem;border:1px solid #eee;">
+            <p style="font-size:0.78rem;font-weight:700;color:#999;margin:0 0 0.6rem;
                 text-transform:uppercase;letter-spacing:0.5px;">Tu reseña</p>
-
-            <!-- Selector de estrellas -->
-            <div style="display:flex;gap:6px;margin-bottom:0.75rem;" id="estrellas-selector">
+            <div style="display:flex;gap:4px;margin-bottom:6px;" id="estrellas-selector">
                 ${[1,2,3,4,5].map(n => `
-                <button onclick="seleccionarEstrellas(${n})" data-val="${n}"
-                    style="background:none;border:none;font-size:1.6rem;cursor:pointer;
-                    color:#ddd;transition:color 0.15s;line-height:1;" class="estrella-btn">★</button>
-                `).join("")}
+                <button onclick="seleccionarEstrellas(${n})" data-val="${n}" class="estrella-btn"
+                    style="background:none;border:none;font-size:1.5rem;cursor:pointer;
+                    color:#ddd;transition:color 0.15s;line-height:1;padding:0;">★</button>
+                `).join('')}
             </div>
-            <p id="estrellas-label" style="font-size:0.78rem;color:#A08070;margin:0 0 0.6rem;">
+            <p id="estrellas-label" style="font-size:0.78rem;color:#aaa;margin:0 0 0.6rem;">
                 Selecciona una puntuación</p>
-
             <textarea id="nueva-resena-texto"
                 placeholder="Cuéntanos tu experiencia con este producto..."
-                style="width:100%;box-sizing:border-box;border:1.5px solid #F0DDD0;
-                border-radius:10px;padding:0.65rem 0.9rem;font-size:0.88rem;
-                font-family:'Lato',sans-serif;outline:none;resize:vertical;
-                min-height:75px;background:#fff;"></textarea>
-
-            <p id="resena-error" style="color:#E07A95;font-size:0.82rem;font-weight:700;
-                min-height:1.1em;margin:4px 0;"></p>
-
+                style="width:100%;box-sizing:border-box;border:1px solid #e0e0e0;
+                border-radius:8px;padding:0.65rem 0.9rem;font-size:0.88rem;
+                font-family:inherit;outline:none;resize:vertical;min-height:75px;
+                background:#fff;transition:border-color 0.2s;"
+                onfocus="this.style.borderColor='#111'"
+                onblur="this.style.borderColor='#e0e0e0'"></textarea>
+            <p id="resena-error" style="color:#e53e3e;font-size:0.82rem;min-height:1.1em;margin:4px 0 0;"></p>
             <button onclick="publicarResena('${productoNombre}')"
-                style="background:#F4A7B9;color:#fff;border:none;border-radius:20px;
-                padding:0.6rem 1.5rem;font-family:'Lato',sans-serif;font-size:0.88rem;
-                font-weight:700;cursor:pointer;transition:background 0.2s;width:100%;margin-top:4px;">
+                style="background:#111;color:#fff;border:none;border-radius:8px;
+                padding:0.6rem 1.5rem;font-size:0.88rem;font-weight:700;cursor:pointer;
+                width:100%;margin-top:8px;transition:background 0.2s;"
+                onmouseover="this.style.background='#333'"
+                onmouseout="this.style.background='#111'">
                 Publicar reseña
             </button>
         </div>`;
@@ -155,100 +198,75 @@ function renderizarResenas(resenas, productoNombre) {
 // ─── SELECCIONAR ESTRELLAS ───────────────────
 window.seleccionarEstrellas = function(n) {
     estrellasSeleccionadas = n;
-    const etiquetas = ["","Muy malo 😞","Malo 😕","Regular 😐","Bueno 😊","Excelente 😍"];
-    document.querySelectorAll(".estrella-btn").forEach(btn => {
-        btn.style.color = parseInt(btn.dataset.val) <= n ? "#F4A7B9" : "#ddd";
+    const etiquetas = ['','Muy malo 😞','Malo 😕','Regular 😐','Bueno 😊','Excelente 😍'];
+    document.querySelectorAll('.estrella-btn').forEach(btn => {
+        btn.style.color = parseInt(btn.dataset.val) <= n ? '#f59e0b' : '#ddd';
     });
-    const label = document.getElementById("estrellas-label");
+    const label = document.getElementById('estrellas-label');
     if (label) label.textContent = etiquetas[n];
 };
 
 // ─── PUBLICAR RESEÑA ─────────────────────────
 window.publicarResena = async function(productoNombre) {
-    const token      = localStorage.getItem("token");
-    const comentario = document.getElementById("nueva-resena-texto")?.value.trim();
-    const errorEl    = document.getElementById("resena-error");
+    const token      = localStorage.getItem('token');
+    const comentario = document.getElementById('nueva-resena-texto')?.value.trim();
+    const errorEl    = document.getElementById('resena-error');
 
-    if (!estrellasSeleccionadas) {
-        errorEl.textContent = "Selecciona una puntuación";
-        return;
-    }
-    if (!comentario || comentario.length < 5) {
-        errorEl.textContent = "El comentario debe tener al menos 5 caracteres";
-        return;
-    }
+    if (!estrellasSeleccionadas) { errorEl.textContent = 'Selecciona una puntuación'; return; }
+    if (!comentario || comentario.length < 5) { errorEl.textContent = 'El comentario debe tener al menos 5 caracteres'; return; }
 
-    errorEl.textContent = "";
-
+    errorEl.textContent = '';
     try {
         const res  = await fetch(`${PROD_API}/resenas`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ productoNombre, estrellas: estrellasSeleccionadas, comentario })
         });
         const data = await res.json();
-
-        if (!res.ok) {
-            errorEl.textContent = data.error || "Error al publicar";
-            return;
-        }
-
-        // Recargar reseñas en el modal
+        if (!res.ok) { errorEl.textContent = data.error || 'Error al publicar'; return; }
         estrellasSeleccionadas = 0;
         await recargarResenasEnModal(productoNombre);
-
-    } catch (err) {
-        errorEl.textContent = "No se pudo conectar con el servidor";
-    }
+    } catch { errorEl.textContent = 'No se pudo conectar con el servidor'; }
 };
 
 // ─── ELIMINAR RESEÑA ─────────────────────────
 window.eliminarResena = async function(id, productoNombre) {
-    if (!confirm("¿Eliminar tu reseña?")) return;
-    const token = localStorage.getItem("token");
+    if (!confirm('¿Eliminar tu reseña?')) return;
+    const token = localStorage.getItem('token');
     try {
         await fetch(`${PROD_API}/resenas/${id}`, {
-            method: "DELETE",
-            headers: { "Authorization": `Bearer ${token}` }
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
         });
         await recargarResenasEnModal(productoNombre);
-    } catch (e) { alert("Error al eliminar"); }
+    } catch { alert('Error al eliminar'); }
 };
 
-// ─── RECARGAR RESEÑAS EN MODAL ───────────────
+// ─── RECARGAR RESEÑAS ────────────────────────
 async function recargarResenasEnModal(productoNombre) {
-    const resenas     = await cargarResenas(productoNombre);
+    const resenas = await cargarResenas(productoNombre);
     const { listaHTML, promedio, formulario, total } = renderizarResenas(resenas, productoNombre);
     estrellasSeleccionadas = 0;
-
-    const seccionResenas = document.getElementById("mp-seccion-resenas");
-    if (!seccionResenas) return;
-
-    seccionResenas.innerHTML = `
+    const seccion = document.getElementById('mp-seccion-resenas');
+    if (!seccion) return;
+    seccion.innerHTML = `
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:0.75rem;">
             <p class="mp-selector-label" style="margin:0;">Reseñas</p>
-            <span style="font-size:0.85rem;color:#F4A7B9;font-weight:700;">
-                ★ ${promedio} · ${total} reseña${total !== 1 ? "s" : ""}
+            <span style="font-size:0.85rem;color:#f59e0b;font-weight:700;">
+                ★ ${promedio} · ${total} reseña${total !== 1 ? 's' : ''}
             </span>
         </div>
         <div class="mp-resenas">${listaHTML}</div>
         ${formulario}`;
 }
 
-// ─── PARSEAR JWT ─────────────────────────────
-function parseJWT(token) {
-    try {
-        return JSON.parse(atob(token.split(".")[1]));
-    } catch { return null; }
-}
-
 // ─── RENDERIZAR CATÁLOGO ─────────────────────
-function renderizarProductos(productos, filtro = "all", favs = []) {
-    const contenedor = document.querySelector(".productos-grid");
+function renderizarProductos(productos, filtro = 'all', favs = []) {
+    const contenedor = document.querySelector('.productos-grid');
     if (!contenedor) return;
-    contenedor.innerHTML = "";
+    contenedor.innerHTML = '';
 
-    const filtrados = filtro === "all"
+    const filtrados = filtro === 'all'
         ? productos
         : productos.filter(p => p.categoria === filtro);
 
@@ -258,10 +276,10 @@ function renderizarProductos(productos, filtro = "all", favs = []) {
         return;
     }
 
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem('token');
 
     filtrados.forEach(producto => {
-        const stars = "★".repeat(producto.rating) + "☆".repeat(5 - producto.rating);
+        const stars = '★'.repeat(producto.rating) + '☆'.repeat(5 - producto.rating);
         const esFav = favs.includes(producto.nombre);
         const btnFav = token
             ? `<button class="btn-fav ${esFav ? 'activo' : ''}"
@@ -270,30 +288,31 @@ function renderizarProductos(productos, filtro = "all", favs = []) {
                 data-imagen="${producto.imagen_front}"
                 data-categoria="${producto.categoria}"
                 title="${esFav ? 'Quitar de favoritos' : 'Agregar a favoritos'}">
-                ${esFav ? "❤️" : "🤍"}
+                ${esFav ? '❤️' : '🤍'}
                </button>`
             : `<button class="btn-fav" onclick="alert('Inicia sesión para guardar favoritos')">🤍</button>`;
 
+        // Usar id numérico o _id de MongoDB
+        const prodId = producto.id || producto._id;
+
         contenedor.innerHTML += `
-            <div class="producto" data-category="${producto.categoria}" data-id="${producto.id}">
+            <div class="producto" data-category="${producto.categoria}" data-id="${prodId}">
                 <div class="img-box" style="position:relative;">
                     <img src="${producto.imagen_front}" class="img-front" alt="${producto.nombre}">
-                    <img src="${producto.imagen_back}" class="img-back" alt="${producto.nombre}">
+                    <img src="${producto.imagen_back}"  class="img-back"  alt="${producto.nombre}">
                     ${btnFav}
                 </div>
                 <h3>${producto.nombre}</h3>
                 <div class="rating">${stars}</div>
-                <p class="precio">$${producto.precio.toLocaleString("es-CO")}</p>
+                <p class="precio">$${producto.precio.toLocaleString('es-CO')}</p>
                 <div style="display:flex;gap:8px;margin-top:8px;">
                     <button class="cart-btn" style="flex:1;"
-                        onclick="event.stopPropagation();agregarCarrito(this)">
-                        🛒 Agregar
-                    </button>
-                    <button onclick="event.stopPropagation();abrirDetalle(${producto.id})"
-                        style="flex:1;background:none;border:1.5px solid #F4A7B9;color:#E07A95;
-                        border-radius:6px;padding:6px;font-size:0.82rem;font-weight:700;cursor:pointer;
-                        transition:background 0.15s;"
-                        onmouseover="this.style.background='#FDF0F5'"
+                        onclick="event.stopPropagation();agregarCarrito(this)">🛒 Agregar</button>
+                    <button onclick="event.stopPropagation();abrirDetalle('${prodId}')"
+                        style="flex:1;background:none;border:1.5px solid #ddd;color:#555;
+                        border-radius:6px;padding:6px;font-size:0.82rem;font-weight:600;
+                        cursor:pointer;transition:background 0.15s;"
+                        onmouseover="this.style.background='#f5f5f5'"
                         onmouseout="this.style.background='none'">
                         Ver detalle
                     </button>
@@ -306,238 +325,207 @@ function renderizarProductos(productos, filtro = "all", favs = []) {
 
 // ─── ABRIR MODAL DETALLE ─────────────────────
 window.abrirDetalle = async function(id) {
-    const producto = todosLosProductos.find(p => p.id === id);
+    // Buscar por id numérico o _id string
+    const producto = todosLosProductos.find(p => String(p.id) === String(id) || String(p._id) === String(id));
     if (!producto) return;
 
-    productoActual        = producto;
-    tallaSeleccionada     = null;
-    colorSeleccionado     = null;
+    productoActual         = producto;
+    tallaSeleccionada      = null;
     estrellasSeleccionadas = 0;
 
-    const modal = document.getElementById("modal-producto");
+    const modal = document.getElementById('modal-producto');
     if (!modal) return;
 
     const esFav  = favoritosActuales.includes(producto.nombre);
-    const tallas = TALLAS[producto.categoria] || TALLAS["default"];
-    const desc   = DESCRIPCIONES[producto.categoria] || DESCRIPCIONES["default"];
+    const tallas = TALLAS[producto.categoria] || TALLAS['default'];
+    const desc   = producto.descripcion || DESCRIPCIONES[producto.categoria] || DESCRIPCIONES['default'];
 
-    // Cargar reseñas reales
     const resenas = await cargarResenas(producto.nombre);
     const { listaHTML, promedio, formulario, total } = renderizarResenas(resenas, producto.nombre);
 
-    // Productos relacionados
     const relacionados = todosLosProductos
-        .filter(p => p.categoria === producto.categoria && p.id !== producto.id)
+        .filter(p => p.categoria === producto.categoria && String(p.id || p._id) !== String(id))
         .slice(0, 4)
-        .map(r => `
-            <div class="mp-rel-card" onclick="abrirDetalle(${r.id})">
+        .map(r => {
+            const rId = r.id || r._id;
+            return `
+            <div class="mp-rel-card" onclick="abrirDetalle('${rId}')">
                 <img src="${r.imagen_front}" alt="${r.nombre}">
                 <p>${r.nombre}</p>
-                <span>$${r.precio.toLocaleString("es-CO")}</span>
-            </div>`).join("");
+                <span>$${r.precio.toLocaleString('es-CO')}</span>
+            </div>`;
+        }).join('');
 
-    modal.querySelector(".mp-box").innerHTML = `
-        <!-- GALERÍA -->
+    const promedioEstrellas = promedio !== '—' ? Math.round(parseFloat(promedio)) : 0;
+
+    modal.querySelector('.mp-box').innerHTML = `
         <div class="mp-galeria">
             <img id="mp-img-main" class="mp-img-principal"
                 src="${producto.imagen_front}" alt="${producto.nombre}">
             <div class="mp-miniaturas">
                 <img class="mp-miniatura activa" src="${producto.imagen_front}"
-                    onclick="cambiarImgPrincipal(this, '${producto.imagen_front}')">
+                    onclick="cambiarImgPrincipal(this,'${producto.imagen_front}')">
                 <img class="mp-miniatura" src="${producto.imagen_back}"
-                    onclick="cambiarImgPrincipal(this, '${producto.imagen_back}')">
+                    onclick="cambiarImgPrincipal(this,'${producto.imagen_back}')">
             </div>
         </div>
 
-        <!-- INFO -->
         <div class="mp-info">
             <button class="mp-cerrar" id="mp-cerrar-btn">✕</button>
-            <p class="mp-categoria">${producto.categoria.replace("-"," ")}</p>
+            <p class="mp-categoria">${producto.categoria.replace('-',' ')}</p>
             <h2 class="mp-nombre">${producto.nombre}</h2>
-
             <div class="mp-rating">
-                <span class="mp-estrellas" style="color:#F4A7B9;">
-                    ${promedio !== "—" ? "★".repeat(Math.round(parseFloat(promedio))) + "☆".repeat(5 - Math.round(parseFloat(promedio))) : "☆☆☆☆☆"}
+                <span class="mp-estrellas">
+                    ${'★'.repeat(promedioEstrellas)}${'☆'.repeat(5 - promedioEstrellas)}
                 </span>
-                <span class="mp-rating-num">★ ${promedio} · ${total} reseña${total !== 1 ? "s" : ""}</span>
+                <span class="mp-rating-num">★ ${promedio} · ${total} reseña${total !== 1 ? 's' : ''}</span>
             </div>
-
-            <p class="mp-precio">$${producto.precio.toLocaleString("es-CO")}</p>
+            <p class="mp-precio">$${producto.precio.toLocaleString('es-CO')}</p>
             <p class="mp-descripcion">${desc}</p>
 
-            <!-- Tallas -->
             <div>
                 <p class="mp-selector-label">Talla</p>
                 <div class="mp-tallas">
                     ${tallas.map(t => `
                         <button class="mp-talla" onclick="seleccionarTalla(this,'${t}')">${t}</button>
-                    `).join("")}
+                    `).join('')}
                 </div>
             </div>
 
-            <!-- Colores -->
-            <div>
-                <p class="mp-selector-label">Color</p>
-                <div class="mp-colores">
-                    ${COLORES.map(c => `
-                        <button class="mp-color" title="${c.nombre}"
-                            style="background:${c.hex};"
-                            onclick="seleccionarColor(this,'${c.nombre}')">
-                        </button>
-                    `).join("")}
-                </div>
-            </div>
-
-            <!-- Acciones -->
             <div class="mp-acciones">
                 <button class="mp-btn-carrito" onclick="agregarDesdeModal()">
                     🛒 Agregar al carrito
                 </button>
                 <button class="mp-btn-fav ${esFav ? 'activo' : ''}"
                     id="mp-btn-fav-modal" onclick="toggleFavDesdeModal(this)">
-                    ${esFav ? "❤️" : "🤍"}
+                    ${esFav ? '❤️' : '🤍'}
                 </button>
             </div>
-            <p id="mp-msg" style="font-size:0.85rem;color:#E07A95;font-weight:700;
+            <p id="mp-msg" style="font-size:0.85rem;color:#111;font-weight:700;
                 min-height:1.2em;text-align:center;margin:0;"></p>
         </div>
 
-        <!-- RESEÑAS -->
         <div class="mp-relacionados" id="mp-seccion-resenas">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:0.75rem;">
                 <p class="mp-selector-label" style="margin:0;">Reseñas</p>
-                <span style="font-size:0.85rem;color:#F4A7B9;font-weight:700;">
-                    ★ ${promedio} · ${total} reseña${total !== 1 ? "s" : ""}
+                <span style="font-size:0.85rem;color:#f59e0b;font-weight:700;">
+                    ★ ${promedio} · ${total} reseña${total !== 1 ? 's' : ''}
                 </span>
             </div>
             <div class="mp-resenas">${listaHTML}</div>
             ${formulario}
         </div>
 
-        <!-- RELACIONADOS -->
         ${relacionados ? `
-        <div class="mp-relacionados" style="border-top:1px solid #F0DDD0;">
+        <div class="mp-relacionados" style="border-top:1px solid #eee;">
             <h4>También te puede gustar</h4>
             <div class="mp-rel-grid">${relacionados}</div>
-        </div>` : ""}
+        </div>` : ''}
     `;
 
-    document.getElementById("mp-cerrar-btn").addEventListener("click", cerrarDetalle);
-    modal.classList.add("abierto");
+    document.getElementById('mp-cerrar-btn').addEventListener('click', cerrarDetalle);
+    modal.classList.add('abierto');
 };
 
 window.cerrarDetalle = function() {
-    document.getElementById("modal-producto").classList.remove("abierto");
+    document.getElementById('modal-producto').classList.remove('abierto');
 };
 
 window.cambiarImgPrincipal = function(min, src) {
-    document.getElementById("mp-img-main").src = src;
-    document.querySelectorAll(".mp-miniatura").forEach(m => m.classList.remove("activa"));
-    min.classList.add("activa");
+    document.getElementById('mp-img-main').src = src;
+    document.querySelectorAll('.mp-miniatura').forEach(m => m.classList.remove('activa'));
+    min.classList.add('activa');
 };
 
 window.seleccionarTalla = function(btn, talla) {
-    document.querySelectorAll(".mp-talla").forEach(b => b.classList.remove("sel"));
-    btn.classList.add("sel");
+    document.querySelectorAll('.mp-talla').forEach(b => b.classList.remove('sel'));
+    btn.classList.add('sel');
     tallaSeleccionada = talla;
-};
-
-window.seleccionarColor = function(btn, color) {
-    document.querySelectorAll(".mp-color").forEach(b => b.classList.remove("sel"));
-    btn.classList.add("sel");
-    colorSeleccionado = color;
 };
 
 window.agregarDesdeModal = function() {
     if (!productoActual) return;
-    const msg = document.getElementById("mp-msg");
-    if (!tallaSeleccionada) { msg.style.color="#E07A95"; msg.textContent="Selecciona una talla"; return; }
-    if (!colorSeleccionado) { msg.style.color="#E07A95"; msg.textContent="Selecciona un color"; return; }
+    const msg = document.getElementById('mp-msg');
+    if (!tallaSeleccionada) { msg.style.color='#e53e3e'; msg.textContent='Selecciona una talla'; return; }
 
-    const nombre = `${productoActual.nombre} (${tallaSeleccionada} · ${colorSeleccionado})`;
-    let carrito  = JSON.parse(localStorage.getItem("carrito")) || [];
+    const nombre = `${productoActual.nombre} (${tallaSeleccionada})`;
+    let carrito  = JSON.parse(localStorage.getItem('carrito')) || [];
     const existe = carrito.find(p => p.nombre === nombre);
-
     if (existe) { existe.cantidad++; }
     else { carrito.push({ nombre, precio: productoActual.precio, img: productoActual.imagen_front, cantidad: 1 }); }
 
-    localStorage.setItem("carrito", JSON.stringify(carrito));
-
-    const token = localStorage.getItem("token");
+    localStorage.setItem('carrito', JSON.stringify(carrito));
+    const token = localStorage.getItem('token');
     if (token) {
         fetch(`${PROD_API}/carrito`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ items: carrito })
         }).catch(() => {});
     }
 
-    msg.style.color = "#16a34a";
-    msg.textContent = "✅ ¡Agregado al carrito!";
-    setTimeout(() => { msg.textContent = ""; }, 2500);
+    msg.style.color = '#16a34a';
+    msg.textContent = '✅ ¡Agregado al carrito!';
+    setTimeout(() => { msg.textContent = ''; }, 2500);
 };
 
 window.toggleFavDesdeModal = async function(btn) {
-    const token = localStorage.getItem("token");
-    if (!token) { alert("Inicia sesión para guardar favoritos"); return; }
+    const token = localStorage.getItem('token');
+    if (!token) { alert('Inicia sesión para guardar favoritos'); return; }
     if (!productoActual) return;
-
-    const esFav  = btn.classList.contains("activo");
+    const esFav  = btn.classList.contains('activo');
     btn.disabled = true;
-
     if (esFav) {
         try {
-            const res  = await fetch(`${PROD_API}/favoritos`, { headers: { "Authorization": `Bearer ${token}` } });
+            const res  = await fetch(`${PROD_API}/favoritos`, { headers: { 'Authorization': `Bearer ${token}` } });
             const favs = await res.json();
             const fav  = favs.find(f => f.nombre === productoActual.nombre);
-            if (fav) await fetch(`${PROD_API}/favoritos/${fav._id}`, { method: "DELETE", headers: { "Authorization": `Bearer ${token}` } });
-            btn.classList.remove("activo"); btn.textContent = "🤍";
+            if (fav) await fetch(`${PROD_API}/favoritos/${fav._id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+            btn.classList.remove('activo'); btn.textContent = '🤍';
             favoritosActuales = favoritosActuales.filter(n => n !== productoActual.nombre);
         } catch (e) {}
     } else {
         try {
             await fetch(`${PROD_API}/favoritos`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ nombre: productoActual.nombre, precio: productoActual.precio, imagen_front: productoActual.imagen_front, categoria: productoActual.categoria })
             });
-            btn.classList.add("activo"); btn.textContent = "❤️";
+            btn.classList.add('activo'); btn.textContent = '❤️';
             favoritosActuales.push(productoActual.nombre);
         } catch (e) {}
     }
-
     btn.disabled = false;
     const btnCat = document.querySelector(`.btn-fav[data-nombre="${productoActual.nombre}"]`);
-    if (btnCat) { btnCat.classList.toggle("activo", !esFav); btnCat.textContent = esFav ? "🤍" : "❤️"; }
+    if (btnCat) { btnCat.classList.toggle('activo', !esFav); btnCat.textContent = esFav ? '🤍' : '❤️'; }
 };
 
 function activarBotonesFavoritos() {
-    document.querySelectorAll(".btn-fav[data-nombre]").forEach(btn => {
-        btn.addEventListener("click", async function(e) {
+    document.querySelectorAll('.btn-fav[data-nombre]').forEach(btn => {
+        btn.addEventListener('click', async function(e) {
             e.stopPropagation();
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem('token');
             if (!token) return;
             const nombre = this.dataset.nombre;
-            const esFav  = this.classList.contains("activo");
+            const esFav  = this.classList.contains('activo');
             this.disabled = true;
-
             if (esFav) {
                 try {
-                    const res  = await fetch(`${PROD_API}/favoritos`, { headers: { "Authorization": `Bearer ${token}` } });
+                    const res  = await fetch(`${PROD_API}/favoritos`, { headers: { 'Authorization': `Bearer ${token}` } });
                     const favs = await res.json();
                     const fav  = favs.find(f => f.nombre === nombre);
-                    if (fav) await fetch(`${PROD_API}/favoritos/${fav._id}`, { method: "DELETE", headers: { "Authorization": `Bearer ${token}` } });
-                    this.classList.remove("activo"); this.textContent = "🤍";
+                    if (fav) await fetch(`${PROD_API}/favoritos/${fav._id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                    this.classList.remove('activo'); this.textContent = '🤍';
                     favoritosActuales = favoritosActuales.filter(n => n !== nombre);
                 } catch (e) {}
             } else {
                 try {
                     await fetch(`${PROD_API}/favoritos`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                         body: JSON.stringify({ nombre, precio: parseInt(this.dataset.precio), imagen_front: this.dataset.imagen, categoria: this.dataset.categoria })
                     });
-                    this.classList.add("activo"); this.textContent = "❤️";
+                    this.classList.add('activo'); this.textContent = '❤️';
                     favoritosActuales.push(nombre);
                 } catch (e) {}
             }
@@ -547,39 +535,72 @@ function activarBotonesFavoritos() {
 }
 
 function inyectarModal() {
-    if (document.getElementById("modal-producto")) return;
-    const div    = document.createElement("div");
-    div.id       = "modal-producto";
+    if (document.getElementById('modal-producto')) return;
+    const div     = document.createElement('div');
+    div.id        = 'modal-producto';
     div.innerHTML = `<div class="mp-box"></div>`;
-    div.addEventListener("click", function(e) { if (e.target === this) cerrarDetalle(); });
+    div.addEventListener('click', function(e) { if (e.target === this) cerrarDetalle(); });
     document.body.appendChild(div);
-    document.addEventListener("keydown", e => { if (e.key === "Escape") cerrarDetalle(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarDetalle(); });
 }
 
+// ─── INICIALIZAR ─────────────────────────────
 async function inicializar() {
     inyectarModal();
 
     const urlActual = window.location.pathname;
-    let categoria   = "productos";
-    if (urlActual.includes("mujer"))   categoria = "mujer";
-    else if (urlActual.includes("ni")) categoria = "niño";
-    else if (urlActual.includes("hombre")) categoria = "hombre";
+    let genero      = 'todos';
+    if (urlActual.includes('mujer'))       genero = 'mujer';
+    else if (urlActual.includes('ni'))     genero = 'niño';
+    else if (urlActual.includes('hombre')) genero = 'hombre';
 
-    const [productos, favs] = await Promise.all([cargarProductos(categoria), obtenerFavoritos()]);
+    const [productos, favs] = await Promise.all([
+        cargarProductos(genero),
+        obtenerFavoritos()
+    ]);
 
     todosLosProductos = productos;
     favoritosActuales  = favs;
 
-    const filtroInicial = new URLSearchParams(window.location.search).get("categoria") || "all";
+    const filtroInicial = new URLSearchParams(window.location.search).get('categoria') || 'all';
     renderizarProductos(productos, filtroInicial, favs);
 
-    document.querySelectorAll(".filtro").forEach(boton => {
-        boton.addEventListener("click", () => {
-            document.querySelectorAll(".filtro").forEach(b => b.classList.remove("activo"));
-            boton.classList.add("activo");
-            renderizarProductos(productos, boton.getAttribute("data-filter"), favoritosActuales);
+    // Botones de filtro por categoría
+    document.querySelectorAll('.filtro').forEach(boton => {
+        boton.addEventListener('click', () => {
+            document.querySelectorAll('.filtro').forEach(b => b.classList.remove('activo'));
+            boton.classList.add('activo');
+            renderizarProductos(
+                ordenarProductos(productos, document.querySelector('.ordenar-select')?.value),
+                boton.getAttribute('data-filter'),
+                favoritosActuales
+            );
         });
     });
+
+    // Select de ordenar (para productos.html)
+    const selectOrdenar = document.querySelector('.ordenar-select, .filtros select');
+    if (selectOrdenar) {
+        selectOrdenar.addEventListener('change', () => {
+            const filtroActivo = document.querySelector('.filtro.activo')?.getAttribute('data-filter') || 'all';
+            renderizarProductos(
+                ordenarProductos(productos, selectOrdenar.value),
+                filtroActivo,
+                favoritosActuales
+            );
+        });
+    }
 }
 
-document.addEventListener("DOMContentLoaded", inicializar);
+// ─── ORDENAR PRODUCTOS ───────────────────────
+function ordenarProductos(productos, criterio) {
+    const copia = [...productos];
+    switch (criterio) {
+        case 'precio-asc':  return copia.sort((a, b) => a.precio - b.precio);
+        case 'precio-desc': return copia.sort((a, b) => b.precio - a.precio);
+        case 'recientes':   return copia.sort((a, b) => new Date(b.creadoEn || 0) - new Date(a.creadoEn || 0));
+        default:            return copia;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', inicializar);
