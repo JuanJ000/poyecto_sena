@@ -1,46 +1,39 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Productos — Tienda X</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://unpkg.com/jam-icons/css/jam.min.css">
 </head>
 <body>
-     <!-- cabesera (logo y menu de navegacion) -->
-     <header class="heder-principal">
+
+    <!-- HEADER -->
+    <header class="heder-principal">
         <div class="content">
             <span class="jam jam-menu"></span>
-            <nav class="menu  redes-sociales" >
+            <nav class="menu redes-sociales">
                 <ul id="menu1">
                     <li><a href="#" class="jam jam-facebook">Facebook</a></li>
                     <li><a href="#" class="jam jam-instagram">Instagram</a></li>
                     <li><a href="#" class="jam jam-whatsapp">WhatsApp</a></li>
                 </ul>
             </nav>
-
-            <a href="/" class="logo">
-                <img src="" alt="logo">
-            </a>
-
+            <a href="/" class="logo"><img src="" alt="logo"></a>
             <nav class="menu">
                 <ul class="categorias">
                     <li><a href="index.html">Inicio</a></li>
                     <li><a href="productos.html">Categoria</a>
-
                         <ul class="sub-menu">
-
                             <li><a href="mujer.html"><p>Mujer</p></a>
                                 <ul>
                                     <li><a href="mujer.html?categoria=ropa-interior">Ropa interior</a></li>
                                     <li><a href="mujer.html?categoria=jeans">Jeans</a></li>
                                     <li><a href="mujer.html?categoria=blusas">Blusas</a></li>
                                     <li><a href="mujer.html?categoria=vestidos">Vestidos</a></li>
-                                 </ul>
+                                </ul>
                             </li>
-                            
-
                             <li><a href="hombre.html"><p>Hombre</p></a>
                                 <ul>
                                     <li><a href="hombre.html?categoria=jeans">Pantalones</a></li>
@@ -48,9 +41,7 @@
                                     <li><a href="hombre.html?categoria=ropa-interior">Ropa interior</a></li>
                                 </ul>
                             </li>
-                                
-                                
-                            <li><a href="niño.html"><p>niño</p></a>
+                            <li><a href="niño.html"><p>Niño</p></a>
                                 <ul>
                                     <li><a href="niño.html?categoria=jeans">Pantalones</a></li>
                                     <li><a href="niño.html?categoria=camisetas">Camisetas</a></li>
@@ -58,101 +49,107 @@
                                 </ul>
                             </li>
                         </ul>
-
                     </li>
                     <li><a href="registrarse.html">Registrarse</a></li>
                     <li><a href="carito.html">Carrito</a></li>
                 </ul>
-               
             </nav>
-
         </div>
     </header>
 
     <main>
-
         <section class="productos-page">
 
             <div class="productos-header">
                 <h1>Nuestros Productos</h1>
 
-                <div class="filtros">
-                    <select>
-                        <option>Ordenar por</option>
-                        <option>Precio menor a mayor</option>
-                        <option>Precio mayor a menor</option>
-                        <option>Más recientes</option>
+                <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+
+                    <!-- Filtro por género -->
+                    <div class="filtros" style="border:none; padding:0; margin:0;">
+                        <button class="filtro activo" data-genero="todos"   onclick="filtrarGenero(this)">Todos</button>
+                        <button class="filtro"        data-genero="mujer"   onclick="filtrarGenero(this)">Mujer</button>
+                        <button class="filtro"        data-genero="hombre"  onclick="filtrarGenero(this)">Hombre</button>
+                        <button class="filtro"        data-genero="niño"    onclick="filtrarGenero(this)">Niño</button>
+                    </div>
+
+                    <!-- Ordenar -->
+                    <select class="ordenar-select" style="
+                        border:1px solid #e0e0e0; border-radius:8px;
+                        padding:0.5rem 1rem; font-size:0.88rem;
+                        outline:none; cursor:pointer; background:#fff;">
+                        <option value="">Ordenar por</option>
+                        <option value="precio-asc">Precio: menor a mayor</option>
+                        <option value="precio-desc">Precio: mayor a menor</option>
+                        <option value="recientes">Más recientes</option>
                     </select>
                 </div>
             </div>
 
+            <!-- Grid de productos -->
             <div class="productos-grid">
-                <!-- Los productos se cargarán dinámicamente -->
+                <!-- Se carga dinámicamente -->
             </div>
 
         </section>
-        
     </main>
 
+    <!-- FOOTER -->
     <footer class="footer">
-    <div class="footer-container">
-
-        <!-- Marca -->
-        <div class="footer-col">
-            <h3>Tienda X</h3>
-            <p>
-                Moda actual, calidad garantizada y envíos rápidos.
-                Diseños pensados para cada estilo y ocasión.
-            </p>
-
-            <div class="footer-social">
-                <a href="#"><i class="jam jam-facebook"></i></a>
-                <a href="#"><i class="jam jam-instagram"></i></a>
-                <a href="#"><i class="jam jam-whatsapp"></i></a>
+        <div class="footer-container">
+            <div class="footer-col">
+                <h3>Tienda X</h3>
+                <p>Moda actual, calidad garantizada y envíos rápidos.</p>
+                <div class="footer-social">
+                    <a href="#"><i class="jam jam-facebook"></i></a>
+                    <a href="#"><i class="jam jam-instagram"></i></a>
+                    <a href="#"><i class="jam jam-whatsapp"></i></a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h4>Enlaces</h4>
+                <ul>
+                    <li><a href="#">Inicio</a></li>
+                    <li><a href="#">Tienda</a></li>
+                    <li><a href="#">Categorías</a></li>
+                    <li><a href="#">Contacto</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Ayuda</h4>
+                <ul>
+                    <li><a href="#">Preguntas frecuentes</a></li>
+                    <li><a href="#">Envíos</a></li>
+                    <li><a href="#">Cambios y devoluciones</a></li>
+                    <li><a href="#">Políticas</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Contacto</h4>
+                <p>📧 contacto@tiendax.com</p>
+                <p>📞 +57 300 000 0000</p>
+                <p>📍 Colombia</p>
             </div>
         </div>
-
-        <!-- Links -->
-        <div class="footer-col">
-            <h4>Enlaces</h4>
-            <ul>
-                <li><a href="#">Inicio</a></li>
-                <li><a href="#">Tienda</a></li>
-                <li><a href="#">Categorías</a></li>
-                <li><a href="#">Contacto</a></li>
-            </ul>
-        </div>
-
-        <!-- Ayuda -->
-        <div class="footer-col">
-            <h4>Ayuda</h4>
-            <ul>
-                <li><a href="#">Preguntas frecuentes</a></li>
-                <li><a href="#">Envíos</a></li>
-                <li><a href="#">Cambios y devoluciones</a></li>
-                <li><a href="#">Políticas</a></li>
-            </ul>
-        </div>
-
-        <!-- Contacto -->
-        <div class="footer-col">
-            <h4>Contacto</h4>
-            <p>📧 contacto@tiendax.com</p>
-            <p>📞 +57 300 000 0000</p>
-            <p>📍 Colombia</p>
-        </div>
-
-    </div>
-
-    <div class="footer-bottom">
-        © 2026 Tienda X — Todos los derechos reservados
-    </div>
-</footer>
+        <div class="footer-bottom">© 2026 Tienda X — Todos los derechos reservados</div>
+    </footer>
 
     <script src="scripts/productos.js"></script>
     <script src="scripts/menu.js"></script>
-    <script src="scripts/filtros.js"></script>
     <script src="scripts/carrito-add.js"></script>
+    <script>
+        // Filtro por género en productos.html
+        function filtrarGenero(btn) {
+            document.querySelectorAll('[data-genero]').forEach(b => b.classList.remove('activo'));
+            btn.classList.add('activo');
+            const genero = btn.dataset.genero;
+            const productosFiltrados = genero === 'todos'
+                ? todosLosProductos
+                : todosLosProductos.filter(p => p.genero === genero);
+            const ordenar = document.querySelector('.ordenar-select')?.value;
+            renderizarProductos(ordenarProductos(productosFiltrados, ordenar), 'all', favoritosActuales);
+        }
+    </script>
 
 </body>
 </html>
