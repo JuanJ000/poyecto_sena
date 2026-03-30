@@ -57,29 +57,10 @@ async function cargarProductos(genero) {
     }
 
     // 2. Fallback: cargar desde JSON local
-    // Para 'todos' combinar los 3 JSONs disponibles
-    if (genero === 'todos') {
-        try {
-            const generos = ['hombre', 'mujer', 'niño'];
-            const resultados = await Promise.all(
-                generos.map(async g => {
-                    try {
-                        const r    = await fetch(`datos/${g}.json`);
-                        const data = await r.json();
-                        return (data.productos || []).map(p => ({ ...p, genero: g }));
-                    } catch { return []; }
-                })
-            );
-            return resultados.flat();
-        } catch (e) {
-            console.error('Error cargando todos los productos:', e);
-            return [];
-        }
-    }
-
-    // Para géneros individuales
     try {
-        const res  = await fetch(`datos/${genero}.json`);
+        // Para 'todos' usar productos.json que tiene todos los géneros
+        const archivo = genero === 'todos' ? 'productos' : genero;
+        const res  = await fetch(`datos/${archivo}.json`);
         if (!res.ok) throw new Error('No encontrado');
         const data = await res.json();
         return data.productos || [];

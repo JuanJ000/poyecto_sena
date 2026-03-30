@@ -7,6 +7,27 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://unpkg.com/jam-icons/css/jam.min.css">
 </head>
+
+<!-- MODAL SEGUIMIENTO DE PEDIDO -->
+<div class="seguimiento-overlay" id="seguimiento-overlay"
+    onclick="if(event.target===this) cerrarSeguimiento()">
+    <div class="seguimiento-box">
+ 
+        <div class="seguimiento-header">
+            <div>
+                <h2>Pedido #------</h2>
+                <p>Fecha · Total</p>
+            </div>
+            <button class="seguimiento-cerrar" onclick="cerrarSeguimiento()">✕</button>
+        </div>
+ 
+        <div class="seguimiento-body">
+            <!-- Se llena con JS -->
+        </div>
+ 
+    </div>
+</div>
+
 <body>
 
     <!-- HEADER -->
