@@ -69,11 +69,11 @@ async function cargarPedidos() {
         }
 
         lista.innerHTML = data.map(p => {
-            const fecha = new Date(p.fecha).toLocaleDateString("es-CO", { year: "numeric", month: "short", day: "numeric" });
-            const items = p.items.map(i => `<span class="pedido-item-chip">${i.nombre} x${i.cantidad}</span>`).join("");
-            const total = p.items.reduce((acc, i) => acc + i.precio * i.cantidad, 0);
-            const envio = p.envio ? `
-                <div style="margin-top:0.5rem; font-size:0.83rem; color:#666; line-height:1.6;">
+            const fecha  = new Date(p.fecha).toLocaleDateString("es-CO", { year:"numeric", month:"short", day:"numeric" });
+            const items  = p.items.map(i => `<span class="pedido-item-chip">${i.nombre} x${i.cantidad}</span>`).join("");
+            const total  = p.items.reduce((acc, i) => acc + i.precio * i.cantidad, 0);
+            const envio  = p.envio ? `
+                <div style="margin-top:0.5rem;font-size:0.83rem;color:#666;line-height:1.6;">
                     📍 ${p.envio.direccion}, ${p.envio.ciudad}, ${p.envio.departamento}<br>
                     👤 ${p.envio.nombre} — 📞 ${p.envio.telefono}<br>
                     💳 ${p.metodoPago || "—"}
@@ -89,13 +89,114 @@ async function cargarPedidos() {
                     <div class="pedido-items">${items}</div>
                     ${envio}
                     <p class="pedido-total" style="margin-top:0.75rem;">Total: $${total.toLocaleString("es-CO")}</p>
-                </div>
-            `;
+                    <button class="btn-ver-seguimiento" onclick="abrirSeguimiento('${p._id}')">
+                        📦 Ver seguimiento
+                    </button>
+                </div>`;
         }).join("");
 
     } catch (err) {
         lista.innerHTML = `<div class="vacio">❌ <p>Error al cargar pedidos.</p></div>`;
     }
+}
+
+
+// ─── SEGUIMIENTO DE PEDIDO ───────────────────
+window.abrirSeguimiento = async function(pedidoId) {
+    const overlay = document.getElementById("seguimiento-overlay");
+    if (!overlay) return;
+
+    overlay.querySelector(".seguimiento-body").innerHTML =
+        `<p style="text-align:center;color:#aaa;padding:2rem;">Cargando...</p>`;
+    overlay.classList.add("abierto");
+
+    try {
+        const res    = await fetch(`${PERFIL_API}/pedidos/${pedidoId}`, {
+            headers: { "Authorization": `Bearer ${perfilToken}` }
+        });
+        const pedido = await res.json();
+        if (!res.ok) throw new Error(pedido.error);
+
+        const fecha  = new Date(pedido.fecha).toLocaleDateString("es-CO", { year:"numeric", month:"long", day:"numeric" });
+        const total  = pedido.items.reduce((a, i) => a + i.precio * i.cantidad, 0);
+
+        // Timeline
+        const pasos = [
+            { key:"pendiente",  icon:"🕐", label:"Pedido recibido",    desc:"Tu pedido fue confirmado" },
+            { key:"enviado",    icon:"🚚", label:"En camino",           desc:"Tu pedido está siendo enviado" },
+            { key:"entregado",  icon:"✅", label:"Entregado",           desc:"Tu pedido fue entregado" }
+        ];
+        const estados = ["pendiente","enviado","entregado"];
+        const idxActual = estados.indexOf(pedido.estado);
+
+        const timelineHTML = pasos.map((paso, i) => {
+            let clase = "pendiente";
+            if (i < idxActual)  clase = "completado";
+            if (i === idxActual) clase = "actual completado";
+            return `
+            <div class="timeline-step ${clase}">
+                <div class="timeline-icono">${i <= idxActual ? paso.icon : "○"}</div>
+                <div class="timeline-info">
+                    <h4>${paso.label}</h4>
+                    <p>${i <= idxActual ? paso.desc : "Pendiente"}</p>
+                </div>
+            </div>`;
+        }).join("");
+
+        // Productos
+        const productosHTML = pedido.items.map(item => `
+            <div class="seg-producto-item">
+                <img src="${item.img || 'https://picsum.photos/48/48'}" alt="${item.nombre}">
+                <div class="seg-producto-info">
+                    <h4>${item.nombre}</h4>
+                    <p>Cantidad: ${item.cantidad}</p>
+                </div>
+                <span class="seg-producto-precio">$${(item.precio * item.cantidad).toLocaleString("es-CO")}</span>
+            </div>`).join("");
+
+        // Datos de envío
+        const envioHTML = pedido.envio ? `
+            <div class="seg-envio">
+                <p class="seg-envio-titulo">📍 Datos de envío</p>
+                <p>
+                    <strong>${pedido.envio.nombre}</strong><br>
+                    ${pedido.envio.direccion}, ${pedido.envio.ciudad}, ${pedido.envio.departamento}<br>
+                    📞 ${pedido.envio.telefono}<br>
+                    💳 ${pedido.metodoPago || "—"}
+                    ${pedido.notas ? `<br>📝 ${pedido.notas}` : ""}
+                </p>
+            </div>` : "";
+
+        // Número de guía
+        const trackingHTML = `
+            <div class="tracking-box">
+                <label>Número de guía / Tracking</label>
+                ${pedido.tracking
+                    ? `<p class="tracking-num">${pedido.tracking}</p>`
+                    : `<p class="tracking-vacio">Aún no hay número de guía asignado</p>`}
+            </div>`;
+
+        overlay.querySelector(".seguimiento-header h2").textContent =
+            `Pedido #${pedido._id.toString().slice(-6).toUpperCase()}`;
+        overlay.querySelector(".seguimiento-header p").textContent =
+            `${fecha} · Total: $${total.toLocaleString("es-CO")}`;
+
+        overlay.querySelector(".seguimiento-body").innerHTML = `
+            <div class="timeline">${timelineHTML}</div>
+            ${trackingHTML}
+            <p style="font-size:0.78rem;font-weight:700;color:#888;text-transform:uppercase;
+                letter-spacing:0.5px;margin:0 0 0.75rem;">Productos</p>
+            <div class="seg-productos">${productosHTML}</div>
+            ${envioHTML}`;
+
+    } catch (err) {
+        overlay.querySelector(".seguimiento-body").innerHTML =
+            `<p style="text-align:center;color:#e53e3e;padding:2rem;">Error al cargar el pedido</p>`;
+    }
+};
+
+function cerrarSeguimiento() {
+    document.getElementById("seguimiento-overlay")?.classList.remove("abierto");
 }
 
 

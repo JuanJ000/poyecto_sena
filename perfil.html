@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://unpkg.com/jam-icons/css/jam.min.css">
 </head>
+
 <body>
 
     <!-- HEADER -->
@@ -191,13 +192,28 @@
             </div>
             <div class="footer-col">
                 <h4>Contacto</h4>
-                <p>📧 contacto@tiendax.com</p>
+                <p>📧 <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c4a7abaab0a5a7b0ab84b0ada1aaa0a5bceaa7aba9">[email&#160;protected]</a></p>
                 <p>📞 +57 300 000 0000</p>
                 <p>📍 Colombia</p>
             </div>
         </div>
         <div class="footer-bottom">© 2026 Tienda X — Todos los derechos reservados</div>
-    </footer>
+        </div>
+
+    <!-- MODAL SEGUIMIENTO DE PEDIDO -->
+    <div class="seguimiento-overlay" id="seguimiento-overlay"
+        onclick="if(event.target===this) cerrarSeguimiento()">
+        <div class="seguimiento-box">
+            <div class="seguimiento-header">
+                <div>
+                    <h2>Pedido #------</h2>
+                    <p>Fecha · Total</p>
+                </div>
+                <button class="seguimiento-cerrar" onclick="cerrarSeguimiento()">✕</button>
+            </div>
+            <div class="seguimiento-body"></div>
+        </div>
+    </div>
 
     <script src="scripts/menu.js"></script>
     <script src="scripts/perfil.js"></script>
