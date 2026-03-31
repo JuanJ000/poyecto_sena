@@ -427,4 +427,8 @@ async function eliminarResena(id) {
 // Cerrar modal al hacer click fuera
 document.getElementById('modal-producto').addEventListener('click', function(e) {
     if (e.target === this) cerrarModalProducto();
+<<<<<<< HEAD
 });
+=======
+});
+>>>>>>> eb5240d583ab6d3d285e127b57c29d627e2f68ce
