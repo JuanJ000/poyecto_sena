@@ -423,9 +423,9 @@ ul {
 }
 
 /* FONDOS */
-.con1 { background: url("IMAGENES/mujer.png") center/110% no-repeat; }
-.con2 { background: url("IMAGENES/hombre.jpg") center/110% no-repeat; }
-.con3 { background: url("IMAGENES/niños.jpg") center/110% no-repeat; }
+.con1 { background: url("/assets/IMAGENES/mujer.png") center/110% no-repeat; }
+.con2 { background: url("/assets/IMAGENES/hombre.jpg") center/110% no-repeat; }
+.con3 { background: url("/assets/IMAGENES/niños.jpg") center/110% no-repeat; }
 
 /* OVERLAY */
 .categ > div::before {

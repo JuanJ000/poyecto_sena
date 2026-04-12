@@ -114,7 +114,9 @@ const usuarioSchema = new mongoose.Schema({
     email:    { type: String, required: true, unique: true },
     password: { type: String, required: true },
     rol:      { type: String, default: 'usuario', enum: ['usuario', 'admin'] },
-    creadoEn: { type: Date, default: Date.now }
+    creadoEn: { type: Date, default: Date.now },
+    resetPasswordToken: { type: String, default: null },
+    resetPasswordExpire: { type: Date, default: null }
 });
 
 const pedidoSchema = new mongoose.Schema({
@@ -295,6 +297,101 @@ app.post('/api/login', async (req, res) => {
     if (!valido) return res.status(400).json({ error: 'Email o contraseña incorrectos' });
     const token = jwt.sign({ id: usuario._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, nombre: usuario.nombre, rol: usuario.rol });
+});
+
+// ════════════════════════════════════════════════
+// RECUPERACIÓN DE CONTRASEÑA
+// ════════════════════════════════════════════════
+app.post('/api/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ error: 'Email requerido' });
+
+        const usuario = await Usuario.findOne({ email });
+        if (!usuario) {
+            // Por seguridad, no revelamos si el email existe
+            return res.json({ mensaje: 'Si el email existe, recibirás un correo con instrucciones' });
+        }
+
+        // Generar token securo (32 caracteres aleatorios)
+        const token = require('crypto').randomBytes(32).toString('hex');
+        const tokenHash = require('crypto').createHash('sha256').update(token).digest('hex');
+
+        // Guardar token hasheado y fecha de expiración (1 hora)
+        usuario.resetPasswordToken = tokenHash;
+        usuario.resetPasswordExpire = new Date(Date.now() + 3600000);
+        await usuario.save();
+
+        // Crear link de reset
+        const resetLink = `http://localhost:8080/frontend/registrarse.html?resetToken=${token}&&email=${email}`;
+
+        // Enviar email
+        await enviarEmail({
+            to: email,
+            subject: 'Tienda X - Recuperar tu contraseña',
+            html: `
+                <h2>Recuperar Contraseña</h2>
+                <p>Hola ${usuario.nombre},</p>
+                <p>Recibimos una solicitud para recuperar tu contraseña. Haz clic en el botón a continuación para crear una nueva:</p>
+                <a href="${resetLink}" style="display:inline-block;background:#111;color:#fff;padding:12px 24px;text-decoration:none;border-radius:5px;margin:20px 0;">
+                    Cambiar Contraseña
+                </a>
+                <p>Este link es válido por <strong>1 hora</strong>.</p>
+                <p>Si no solicitaste este cambio, ignora este correo.</p>
+                <hr>
+                <p style="color:#999;font-size:0.9em;">© Tienda X - No responda a este correo</p>
+            `
+        });
+
+        res.json({ mensaje: 'Si el email existe, recibirás un correo con instrucciones para recuperar tu contraseña' });
+    } catch (err) {
+        console.error('Error en forgot-password:', err.message);
+        res.status(500).json({ error: 'Error al procesahr la solicitud' });
+    }
+});
+
+app.post('/api/reset-password', async (req, res) => {
+    try {
+        const { email, token, newPassword, confirmPassword } = req.body;
+
+        if (!email || !token || !newPassword || !confirmPassword) {
+            return res.status(400).json({ error: 'Todos los campos son requeridos' });
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({ error: 'Las contraseñas no coinciden' });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
+        }
+
+        // Hashear el token para comparar
+        const tokenHash = require('crypto').createHash('sha256').update(token).digest('hex');
+
+        // Buscar usuario con token válido y no expirado
+        const usuario = await Usuario.findOne({
+            email,
+            resetPasswordToken: tokenHash,
+            resetPasswordExpire: { $gt: Date.now() }
+        });
+
+        if (!usuario) {
+            return res.status(400).json({ error: 'Link inválido o expirado. Por favor solicita uno nuevo' });
+        }
+
+        // Actualizar contraseña
+        const salt = await bcrypt.genSalt(10);
+        usuario.password = await bcrypt.hash(newPassword, salt);
+        usuario.resetPasswordToken = null;
+        usuario.resetPasswordExpire = null;
+        await usuario.save();
+
+        res.json({ mensaje: 'Contraseña cambiada exitosamente ✅' });
+    } catch (err) {
+        console.error('Error en reset-password:', err.message);
+        res.status(500).json({ error: 'Error al cambiar la contraseña' });
+    }
 });
 
 app.post('/api/admin/login', async (req, res) => {

@@ -102,7 +102,9 @@
 
                         <button type="submit">Entrar</button>
 
-                        <p class="auth-extra">¿Olvidaste tu contraseña?</p>
+                        <p class="auth-extra" onclick="mostrarModalOlviraste()" style="cursor:pointer; color:#0066cc; text-decoration:underline;">
+                            ¿Olvidaste tu contraseña?
+                        </p>
 
                         <p class="auth-error"></p>
 
@@ -130,6 +132,51 @@
 
                     </form>
 
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL RECUPERAR CONTRASEÑA -->
+        <div id="modal-olvide-pass" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000; display:flex; align-items:center; justify-content:center;">
+            <div style="background:#fff; padding:2rem; border-radius:10px; max-width:400px; width:90%; box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                    <h3 style="margin:0;">Recuperar Contraseña</h3>
+                    <button onclick="cerrarModalOlviraste()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:#666;">×</button>
+                </div>
+
+                <!-- FASE 1: Enviar email (por defecto) -->
+                <div id="fase-solicitud" style="display:block;">
+                    <p style="color:#666; margin-bottom:1rem; font-size:0.95rem;">
+                        Ingresa tu email para recibir un enlace para cambiar tu contraseña
+                    </p>
+                    <input id="olvide-email" type="email" placeholder="correo@email.com" style="width:100%; padding:0.7rem; border:1px solid #ddd; border-radius:5px; margin-bottom:1rem; box-sizing:border-box; font-size:1rem;">
+                    <button onclick="solicitarReset()" style="width:100%; padding:0.7rem; background:#111; color:#fff; border:none; border-radius:5px; cursor:pointer; font-size:1rem; font-weight:600;">
+                        Enviar Instrucciones
+                    </button>
+                    <p id="olvide-error" style="color:#dc2626; margin-top:0.75rem; font-size:0.9rem; min-height:1.2em;"></p>
+                </div>
+
+                <!-- FASE 2: Cambiar contraseña (cuando llega del email) -->
+                <div id="fase-cambio" style="display:none;">
+                    <p style="color:#666; margin-bottom:1rem; font-size:0.95rem;">
+                        Ingresa tu nueva contraseña
+                    </p>
+                    <input id="reset-nueva-pass" type="password" placeholder="Nueva contraseña" style="width:100%; padding:0.7rem; border:1px solid #ddd; border-radius:5px; margin-bottom:0.75rem; box-sizing:border-box; font-size:1rem;">
+                    <input id="reset-confirma-pass" type="password" placeholder="Confirmar contraseña" style="width:100%; padding:0.7rem; border:1px solid #ddd; border-radius:5px; margin-bottom:1rem; box-sizing:border-box; font-size:1rem;">
+                    <button onclick="cambiarContrasena()" style="width:100%; padding:0.7rem; background:#16a34a; color:#fff; border:none; border-radius:5px; cursor:pointer; font-size:1rem; font-weight:600;">
+                        Cambiar Contraseña
+                    </button>
+                    <p id="reset-error" style="color:#dc2626; margin-top:0.75rem; font-size:0.9rem; min-height:1.2em;"></p>
+                </div>
+
+                <!-- FASE 3: Éxito -->
+                <div id="fase-exito" style="display:none; text-align:center;">
+                    <p style="font-size:2.5rem; margin-bottom:0.5rem;">✅</p>
+                    <h4 style="color:#16a34a; margin-bottom:0.5rem;">¡Contraseña cambiada!</h4>
+                    <p style="color:#666; margin-bottom:1.5rem;">Ya puedes iniciar sesión con tu nueva contraseña</p>
+                    <button onclick="cerrarModalOlviraste()" style="width:100%; padding:0.7rem; background:#111; color:#fff; border:none; border-radius:5px; cursor:pointer; font-size:1rem; font-weight:600;">
+                        Cerrar
+                    </button>
                 </div>
             </div>
         </div>
