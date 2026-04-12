@@ -1,0 +1,76 @@
+# ═══════════════════════════════════════════════════════════════════
+# Tienda X — .gitignore
+# Archivos que NO deben versionarse en Git
+# ═══════════════════════════════════════════════════════════════════
+
+# ─── VARIABLES DE ENTORNO (CRÍTICO) ───────────────────────────────
+.env
+.env.local
+.env.*.local
+.env.production
+
+# ─── DEPENDENCIAS ─────────────────────────────────────────────────
+node_modules/
+npm-debug.log
+npm-debug.log.*
+yarn-error.log
+yarn-debug.log*
+package-lock.json
+yarn.lock
+
+# ─── IDE / EDITORES ──────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+*.sublime-project
+*.sublime-workspace
+
+# ─── BUILD / DIST ────────────────────────────────────────────────
+dist/
+build/
+out/
+*.tgz
+*.tar.gz
+
+# ─── BASES DE DATOS ──────────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+./data/
+db.json
+
+# ─── LOGS ────────────────────────────────────────────────────────
+logs/
+*.log
+*.log.*
+
+# ─── ARCHIVOS TEMPORALES ─────────────────────────────────────────
+*.tmp
+*.temp
+tmp/
+temp/
+
+# ─── OS ──────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── LOCAL / DESARROLLO ──────────────────────────────────────────
+.qodo/
+.vscode/settings.json
+dev/
+local/
+
+# ─── BACKUPS ──────────────────────────────────────────────────────
+*.bak
+*.backup
+*.old
+
+# ─── MÓDULOS SECUNDARIOS ─────────────────────────────────────────
+backend/backend/
+scripts/ (vacío)
+

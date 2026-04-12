@@ -249,14 +249,21 @@ document.addEventListener("DOMContentLoaded", () => {
     // ─── ABRIR MODAL CHECKOUT ────────────────
     if (btnCheckout) {
         btnCheckout.addEventListener("click", async () => {
-            const token = localStorage.getItem("token");
-
-            if (!token) {
-                if (confirm("Debes iniciar sesión para finalizar la compra. ¿Ir a iniciar sesión?")) {
-                    window.location.href = "registrarse.html";
-                }
+            // Validar token ANTES de abrir checkout
+            if (AuthToken.redirectIfNotAuthenticated('Necesitas iniciar sesión para finalizar la compra')) {
                 return;
             }
+
+            // Verificar si token está próximo a expirar
+            const timeLeft = AuthToken.getTimeToExpire();
+            if (timeLeft < 300) { // Menos de 5 minutos
+                alert(`⚠️ Tu sesión está por expirar ${AuthToken.getExpirationReadable()}.\nPor favor inicia sesión nuevamente para finalizar la compra.`);
+                AuthToken.remove();
+                window.location.href = 'registrarse.html';
+                return;
+            }
+
+            const token = AuthToken.get();
 
             if (carrito.length === 0) {
                 alert("Tu carrito está vacío");
@@ -282,8 +289,11 @@ document.addEventListener("DOMContentLoaded", () => {
             // Cargar direcciones guardadas
             try {
                 const res  = await fetch(`${CARRITO_API}/direcciones`, {
-                    headers: { "Authorization": `Bearer ${token}` }
+                    headers: AuthToken.getHeaders()
                 });
+                if (res.status === 401) {
+                    throw new Error('Token expirado o inválido');
+                }
                 const dirs = res.ok ? await res.json() : [];
                 renderSeccionDireccion(dirs, preNombre);
             } catch {
@@ -363,10 +373,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (guardarDir && envio) {
                 await fetch(`${CARRITO_API}/direcciones`, {
                     method: "POST",
-                    headers: {
-                        "Content-Type":  "application/json",
-                        "Authorization": `Bearer ${token}`
-                    },
+                    headers: AuthToken.getHeaders(),
                     body: JSON.stringify({
                         nombre:       "Envío",
                         destinatario: envio.nombre,
@@ -381,17 +388,23 @@ document.addEventListener("DOMContentLoaded", () => {
             // Crear el pedido
             const res  = await fetch(`${CARRITO_API}/pedidos`, {
                 method: "POST",
-                headers: {
-                    "Content-Type":  "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
+                headers: AuthToken.getHeaders(),
                 body: JSON.stringify({ items: carrito, envio, metodoPago: pago, notas })
             });
 
             const data = await res.json();
 
             if (!res.ok) {
-                errorEl.textContent      = data.error || "Error al procesar el pedido";
+                // Detectar si es error de autenticación
+                if (res.status === 401) {
+                    errorEl.textContent = '❌ Tu sesión expiró. Por favor inicia sesión nuevamente.';
+                    setTimeout(() => {
+                        AuthToken.remove();
+                        window.location.href = 'registrarse.html';
+                    }, 2000);
+                } else {
+                    errorEl.textContent = data.error || "Error al procesar el pedido";
+                }
                 btnConfirmar.disabled    = false;
                 btnConfirmar.textContent = "Confirmar pedido";
                 return;
@@ -403,7 +416,7 @@ document.addEventListener("DOMContentLoaded", () => {
             try {
                 await fetch(`${CARRITO_API}/carrito`, {
                     method: "DELETE",
-                    headers: { "Authorization": `Bearer ${token}` }
+                    headers: AuthToken.getHeaders()
                 });
             } catch (e) {}
             carrito = [];

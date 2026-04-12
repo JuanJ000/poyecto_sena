@@ -4,7 +4,8 @@ const bcrypt     = require('bcryptjs');
 const jwt        = require('jsonwebtoken');
 const cors       = require('cors');
 const nodemailer = require('nodemailer');
-require('dotenv').config();
+const path       = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 app.use(cors());
@@ -13,7 +14,8 @@ app.use(express.json());
 // ══════════════════════════════════════════════
 // CONEXIÓN A MONGODB
 // ══════════════════════════════════════════════
-mongoose.connect(process.env.MONGO_URI)
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/tiendax';
+mongoose.connect(MONGO_URI)
     .then(() => console.log('✅ Conectado a MongoDB'))
     .catch(err => console.error('❌ Error:', err));
 
@@ -193,26 +195,79 @@ const Cupon     = mongoose.model('Cupon',     cuponSchema);
 // MIDDLEWARES
 // ══════════════════════════════════════════════
 function verificarToken(req, res, next) {
-    const token = req.headers['authorization']?.split(' ')[1];
-    if (!token) return res.status(401).json({ error: 'No autorizado' });
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        // Obtener token del header Authorization
+        const authHeader = req.headers['authorization'];
+        
+        if (!authHeader) {
+            console.error('❌ Error: No se envió header Authorization');
+            return res.status(401).json({ error: 'No autorizado: falta token' });
+        }
+
+        // Esperar formato "Bearer <token>"
+        const parts = authHeader.split(' ');
+        if (parts.length !== 2 || parts[0] !== 'Bearer') {
+            console.error('❌ Error: Formato Authorization inválido:', authHeader);
+            return res.status(401).json({ error: 'Formato de Authorization inválido' });
+        }
+
+        const token = parts[1];
+
+        if (!token) {
+            console.error('❌ Error: Token vacío');
+            return res.status(401).json({ error: 'No autorizado: token vacío' });
+        }
+
+        // Verificar JWT
+        const jwtSecret = process.env.JWT_SECRET;
+        if (!jwtSecret) {
+            console.error('❌ Error: JWT_SECRET no está definido');
+            return res.status(500).json({ error: 'Error de servidor: JWT_SECRET no configurado' });
+        }
+
+        const decoded = jwt.verify(token, jwtSecret);
         req.userId = decoded.id;
         next();
-    } catch {
-        return res.status(401).json({ error: 'Token inválido' });
+
+    } catch (err) {
+        console.error('❌ Error verificando token:', err.message);
+        
+        if (err.name === 'TokenExpiredError') {
+            return res.status(401).json({ error: 'Token expirado' });
+        }
+        if (err.name === 'JsonWebTokenError') {
+            return res.status(401).json({ error: 'Token inválido' });
+        }
+        
+        return res.status(401).json({ error: 'No autorizado: ' + err.message });
     }
 }
 
 async function verificarAdmin(req, res, next) {
     try {
+        if (!req.userId) {
+            console.error('❌ Error: req.userId no está definido');
+            return res.status(403).json({ error: 'No hay usuario identificado' });
+        }
+
         const usuario = await Usuario.findById(req.userId);
-        if (!usuario || usuario.rol !== 'admin')
+        
+        if (!usuario) {
+            console.error('❌ Error: Usuario no encontrado:', req.userId);
+            return res.status(403).json({ error: 'Usuario no encontrado' });
+        }
+
+        if (usuario.rol !== 'admin') {
+            console.error('❌ Error: Usuario sin permisos admin:', usuario.email);
             return res.status(403).json({ error: 'Acceso denegado — se requiere rol admin' });
+        }
+
         req.usuario = usuario;
         next();
-    } catch {
-        return res.status(500).json({ error: 'Error verificando permisos' });
+
+    } catch (err) {
+        console.error('❌ Error verificando admin:', err.message);
+        return res.status(500).json({ error: 'Error verificando permisos', details: err.message });
     }
 }
 
@@ -612,6 +667,7 @@ app.get('/api/admin/exportar-ventas', verificarToken, verificarAdmin, async (req
 // ══════════════════════════════════════════════
 // INICIAR SERVIDOR
 // ══════════════════════════════════════════════
-app.listen(process.env.PORT, () => {
-    console.log(`🚀 Servidor corriendo en http://localhost:${process.env.PORT}`);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 });

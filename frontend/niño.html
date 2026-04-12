@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="https://unpkg.com/jam-icons/css/jam.min.css">
 </head>
 <body>
@@ -27,7 +27,7 @@
             <nav class="menu">
                 <ul class="categorias">
                     <li><a href="index.html">Inicio</a></li>
-                    <li><a href="#">Categoria</a>
+                    <li><a href="productos.html">Categoria</a>
 
                         <ul class="sub-menu">
 
@@ -50,7 +50,7 @@
                             </li>
                                 
                                 
-                            <li><a href="niño.html"><p>niño</p></a>
+                            <li><a href="niño.html"><p>niños</p></a>
                                 <ul>
                                     <li><a href="niño.html?categoria=jeans">Pantalones</a></li>
                                     <li><a href="niño.html?categoria=camisetas">Camisetas</a></li>
@@ -62,7 +62,6 @@
                     </li>
                     <li><a href="registrarse.html">Registrarse</a></li>
                     <li><a href="carito.html">Carrito</a></li>
-                    <li><a href="perfil.html">Mi perfil</a></li>
                 </ul>
                
             </nav>
@@ -70,31 +69,28 @@
         </div>
     </header>
 
-    <main class="carrito-container">
-
-    <h1>Carrito de Compras</h1>
-
-    <div class="carrito-grid">
-
-        <!-- LISTA DE PRODUCTOS -->
-        <div class="carrito-items" id="carrito-items">
-            <!-- Se llena con JS -->
-        </div>
-
-        <!-- RESUMEN -->
-        <div class="carrito-resumen">
-            <h2>Resumen</h2>
-
-            <p>Total: <span id="total">$0</span></p>
-
-            <button class="btn-checkout">Finalizar compra</button>
-        </div>
-
-    </div>
+    
 
 </main>
 
-<script src="scripts/carrito.js" defer></script>
+    <main class="catalogo-container">
+
+    <h1 class="catalogo-titulo">Catálogo niños</h1>
+
+    <!-- FILTROS -->
+    <div class="filtros">
+        <button class="filtro activo" data-filter="all">Todos</button>
+        <button class="filtro" data-filter="jeans">Jeans</button>
+        <button class="filtro" data-filter="camisetas">Camisetas</button>
+        <button class="filtro" data-filter="ropa-interior">Ropa interior</button>
+
+    </div>
+
+    <div class="productos-grid">
+        <!-- Los productos se cargarán dinámicamente desde datos/niño.json -->
+    </div>
+
+</main>
 
     <footer class="footer">
     <div class="footer-container">
@@ -109,7 +105,7 @@
 
             <div class="footer-social">
                 <a href="#"><i class="jam jam-facebook"></i></a>
-                <a href="#"><i class="jam jam-instagram"></i></a>
+                <a href="#"><i class="jam jam-instagr<button class="cart-btn">🛒</button>am"></i></a>
                 <a href="#"><i class="jam jam-whatsapp"></i></a>
             </div>
         </div>
@@ -139,7 +135,7 @@
         <!-- Contacto -->
         <div class="footer-col">
             <h4>Contacto</h4>
-            <p>📧 <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e0838f8e948183948fa09489858e848198ce838f8d">[email&#160;protected]</a></p>
+            <p>📧 <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d9bab6b7adb8baadb699adb0bcb7bdb8a1f7bab6b4">[email&#160;protected]</a></p>
             <p>📞 +57 300 000 0000</p>
             <p>📍 Colombia</p>
         </div>
@@ -149,4 +145,12 @@
     <div class="footer-bottom">
         © 2026 Tienda X — Todos los derechos reservados
     </div>
-<
+</footer>
+
+    <script src="js/productos.js" defer></script>
+    <script src="js/menu.js" defer></script>
+    <script src="js/filtros.js" defer></script>
+    <script src="js/carrito-add.js" defer></script>
+
+</body>
+</html>

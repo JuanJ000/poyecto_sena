@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="https://unpkg.com/jam-icons/css/jam.min.css">
 </head>
 <body>
@@ -50,7 +50,7 @@
                             </li>
                                 
                                 
-                            <li><a href="niño.html"><p>niños</p></a>
+                            <li><a href="niño.html"><p>niño</p></a>
                                 <ul>
                                     <li><a href="niño.html?categoria=jeans">Pantalones</a></li>
                                     <li><a href="niño.html?categoria=camisetas">Camisetas</a></li>
@@ -69,28 +69,71 @@
         </div>
     </header>
 
-    
+    <main>
+        <div class="auth">
+            <div class="auth-container">
 
-</main>
+                <!-- PANEL IZQUIERDO -->
+                <div class="auth-info">
+                    <h2>Bienvenido a Tienda X</h2>
+                    <p>
+                        Crea tu cuenta y accede a ofertas exclusivas,
+                        guarda tus productos favoritos y compra más rápido.
+                    </p>
+                </div>
 
-    <main class="catalogo-container">
+                <!-- PANEL FORMULARIOS -->
+                <div class="auth-box">
 
-    <h1 class="catalogo-titulo">Catálogo niños</h1>
+                    <div class="auth-tabs">
+                        <button class="tab active" data-form="login">Iniciar sesión</button>
+                        <button class="tab" data-form="register">Registrarse</button>
+                    </div>
 
-    <!-- FILTROS -->
-    <div class="filtros">
-        <button class="filtro activo" data-filter="all">Todos</button>
-        <button class="filtro" data-filter="jeans">Jeans</button>
-        <button class="filtro" data-filter="camisetas">Camisetas</button>
-        <button class="filtro" data-filter="ropa-interior">Ropa interior</button>
+                    <!-- LOGIN -->
+                    <form class="auth-form active" id="login">
+                        <h3>Iniciar sesión</h3>
 
-    </div>
+                        <label>Email</label>
+                        <input type="email" name="email" placeholder="correo@email.com" required>
 
-    <div class="productos-grid">
-        <!-- Los productos se cargarán dinámicamente desde datos/niño.json -->
-    </div>
+                        <label>Contraseña</label>
+                        <input type="password" name="password" placeholder="********" required>
 
-</main>
+                        <button type="submit">Entrar</button>
+
+                        <p class="auth-extra">¿Olvidaste tu contraseña?</p>
+
+                        <p class="auth-error"></p>
+
+                    </form>
+
+                    <!-- REGISTRO -->
+                    <form class="auth-form" id="register">
+                        <h3>Crear cuenta</h3>
+
+                        <label>Nombre</label>
+                        <input type="text" name="nombre" placeholder="Tu nombre" required>
+
+                        <label>Email</label>
+                        <input type="email" name="email" placeholder="correo@email.com" required>
+
+                        <label>Contraseña</label>
+                        <input type="password" name="password" placeholder="********" required>
+
+                        <label>Confirmar contraseña</label>
+                        <input type="password" name="confirm_password" placeholder="********" required>
+
+                        <button type="submit">Registrarme</button>
+                    
+                        <p class="auth-error"></p>
+
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </main>
 
     <footer class="footer">
     <div class="footer-container">
@@ -105,7 +148,7 @@
 
             <div class="footer-social">
                 <a href="#"><i class="jam jam-facebook"></i></a>
-                <a href="#"><i class="jam jam-instagr<button class="cart-btn">🛒</button>am"></i></a>
+                <a href="#"><i class="jam jam-instagram"></i></a>
                 <a href="#"><i class="jam jam-whatsapp"></i></a>
             </div>
         </div>
@@ -135,7 +178,7 @@
         <!-- Contacto -->
         <div class="footer-col">
             <h4>Contacto</h4>
-            <p>📧 <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d9bab6b7adb8baadb699adb0bcb7bdb8a1f7bab6b4">[email&#160;protected]</a></p>
+            <p>📧 contacto@tiendax.com</p>
             <p>📞 +57 300 000 0000</p>
             <p>📍 Colombia</p>
         </div>
@@ -147,10 +190,9 @@
     </div>
 </footer>
 
-    <script src="scripts/productos.js" defer></script>
-    <script src="scripts/menu.js" defer></script>
-    <script src="scripts/filtros.js" defer></script>
-    <script src="scripts/carrito-add.js" defer></script>
+    <script src="js/auth-token.js"></script>
+    <script src="js/menu.js"></script>
+    <script src="js/filtros.js"></script>
 
 </body>
 </html>

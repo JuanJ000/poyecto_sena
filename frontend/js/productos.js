@@ -64,7 +64,7 @@ async function cargarProductos(genero) {
             const resultados = await Promise.all(
                 generos.map(async g => {
                     try {
-                        const r    = await fetch(`datos/${g}.json`);
+                        const r    = await fetch(`../../datos/${g}.json`);
                         const data = await r.json();
                         return (data.productos || []).map(p => ({ ...p, genero: g }));
                     } catch { return []; }
@@ -79,7 +79,7 @@ async function cargarProductos(genero) {
 
     // Para géneros individuales
     try {
-        const res  = await fetch(`datos/${genero}.json`);
+        const res  = await fetch(`../../datos/${genero}.json`);
         if (!res.ok) throw new Error('No encontrado');
         const data = await res.json();
         return data.productos || [];
@@ -208,7 +208,20 @@ window.seleccionarEstrellas = function(n) {
 
 // ─── PUBLICAR RESEÑA ─────────────────────────
 window.publicarResena = async function(productoNombre) {
-    const token      = localStorage.getItem('token');
+    // Validar autenticación
+    if (AuthToken.redirectIfNotAuthenticated('Debes iniciar sesión para publicar reseñas')) {
+        return;
+    }
+
+    // Verificar si token está próximo a expirar
+    const timeLeft = AuthToken.getTimeToExpire();
+    if (timeLeft < 300) {
+        alert(`⚠️ Tu sesión está por expirar ${AuthToken.getExpirationReadable()}. Por favor inicia sesión nuevamente.`);
+        AuthToken.remove();
+        window.location.href = 'registrarse.html';
+        return;
+    }
+
     const comentario = document.getElementById('nueva-resena-texto')?.value.trim();
     const errorEl    = document.getElementById('resena-error');
 
@@ -219,27 +232,66 @@ window.publicarResena = async function(productoNombre) {
     try {
         const res  = await fetch(`${PROD_API}/resenas`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            headers: AuthToken.getHeaders(),
             body: JSON.stringify({ productoNombre, estrellas: estrellasSeleccionadas, comentario })
         });
         const data = await res.json();
-        if (!res.ok) { errorEl.textContent = data.error || 'Error al publicar'; return; }
+        
+        if (!res.ok) {
+            if (res.status === 401) {
+                errorEl.textContent = '❌ Tu sesión expiró. Por favor inicia sesión nuevamente.';
+                setTimeout(() => {
+                    AuthToken.remove();
+                    window.location.href = 'registrarse.html';
+                }, 1500);
+            } else {
+                errorEl.textContent = data.error || 'Error al publicar';
+            }
+            return;
+        }
+        
+        errorEl.textContent = '✅ Reseña publicada correctamente';
+        errorEl.style.color = '#16a34a';
         estrellasSeleccionadas = 0;
+        
+        setTimeout(() => {
+            errorEl.textContent = '';
+            errorEl.style.color = '';
+        }, 3000);
+        
         await recargarResenasEnModal(productoNombre);
-    } catch { errorEl.textContent = 'No se pudo conectar con el servidor'; }
+    } catch (err) { 
+        console.error('Error en publicarResena:', err);
+        errorEl.textContent = 'No se pudo conectar con el servidor';
+    }
 };
 
 // ─── ELIMINAR RESEÑA ─────────────────────────
 window.eliminarResena = async function(id, productoNombre) {
     if (!confirm('¿Eliminar tu reseña?')) return;
-    const token = localStorage.getItem('token');
+    
+    if (AuthToken.redirectIfNotAuthenticated('Debes iniciar sesión para eliminar reseñas')) {
+        return;
+    }
+    
     try {
-        await fetch(`${PROD_API}/resenas/${id}`, {
+        const res = await fetch(`${PROD_API}/resenas/${id}`, {
             method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: AuthToken.getHeaders()
         });
+        
+        if (!res.ok && res.status === 401) {
+            alert('Tu sesión expiró. Por favor inicia sesión nuevamente.');
+            AuthToken.remove();
+            window.location.href = 'registrarse.html';
+            return;
+        }
+        
         await recargarResenasEnModal(productoNombre);
-    } catch { alert('Error al eliminar'); }
+    } catch (err) { 
+        console.error('Error al eliminar:', err);
+        alert('Error al eliminar la reseña');
+    }
 };
 
 // ─── RECARGAR RESEÑAS ────────────────────────

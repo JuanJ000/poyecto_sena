@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="https://unpkg.com/jam-icons/css/jam.min.css">
 </head>
 <body>
@@ -27,7 +27,7 @@
             <nav class="menu">
                 <ul class="categorias">
                     <li><a href="index.html">Inicio</a></li>
-                    <li><a href="productos.html">Categoria</a>
+                    <li><a href="#">Categoria</a>
 
                         <ul class="sub-menu">
 
@@ -62,6 +62,7 @@
                     </li>
                     <li><a href="registrarse.html">Registrarse</a></li>
                     <li><a href="carito.html">Carrito</a></li>
+                    <li><a href="perfil.html">Mi perfil</a></li>
                 </ul>
                
             </nav>
@@ -69,71 +70,32 @@
         </div>
     </header>
 
-    <main>
-        <div class="auth">
-            <div class="auth-container">
+    <main class="carrito-container">
 
-                <!-- PANEL IZQUIERDO -->
-                <div class="auth-info">
-                    <h2>Bienvenido a Tienda X</h2>
-                    <p>
-                        Crea tu cuenta y accede a ofertas exclusivas,
-                        guarda tus productos favoritos y compra más rápido.
-                    </p>
-                </div>
+    <h1>Carrito de Compras</h1>
 
-                <!-- PANEL FORMULARIOS -->
-                <div class="auth-box">
+    <div class="carrito-grid">
 
-                    <div class="auth-tabs">
-                        <button class="tab active" data-form="login">Iniciar sesión</button>
-                        <button class="tab" data-form="register">Registrarse</button>
-                    </div>
-
-                    <!-- LOGIN -->
-                    <form class="auth-form active" id="login">
-                        <h3>Iniciar sesión</h3>
-
-                        <label>Email</label>
-                        <input type="email" name="email" placeholder="correo@email.com" required>
-
-                        <label>Contraseña</label>
-                        <input type="password" name="password" placeholder="********" required>
-
-                        <button type="submit">Entrar</button>
-
-                        <p class="auth-extra">¿Olvidaste tu contraseña?</p>
-
-                        <p class="auth-error"></p>
-
-                    </form>
-
-                    <!-- REGISTRO -->
-                    <form class="auth-form" id="register">
-                        <h3>Crear cuenta</h3>
-
-                        <label>Nombre</label>
-                        <input type="text" name="nombre" placeholder="Tu nombre" required>
-
-                        <label>Email</label>
-                        <input type="email" name="email" placeholder="correo@email.com" required>
-
-                        <label>Contraseña</label>
-                        <input type="password" name="password" placeholder="********" required>
-
-                        <label>Confirmar contraseña</label>
-                        <input type="password" name="confirm_password" placeholder="********" required>
-
-                        <button type="submit">Registrarme</button>
-                    
-                        <p class="auth-error"></p>
-
-                    </form>
-
-                </div>
-            </div>
+        <!-- LISTA DE PRODUCTOS -->
+        <div class="carrito-items" id="carrito-items">
+            <!-- Se llena con JS -->
         </div>
-    </main>
+
+        <!-- RESUMEN -->
+        <div class="carrito-resumen">
+            <h2>Resumen</h2>
+
+            <p>Total: <span id="total">$0</span></p>
+
+            <button class="btn-checkout">Finalizar compra</button>
+        </div>
+
+    </div>
+
+</main>
+
+<script src="js/auth-token.js" defer></script>
+<script src="js/carrito.js" defer></script>
 
     <footer class="footer">
     <div class="footer-container">
@@ -178,7 +140,7 @@
         <!-- Contacto -->
         <div class="footer-col">
             <h4>Contacto</h4>
-            <p>📧 contacto@tiendax.com</p>
+            <p>📧 <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e0838f8e948183948fa09489858e848198ce838f8d">[email&#160;protected]</a></p>
             <p>📞 +57 300 000 0000</p>
             <p>📍 Colombia</p>
         </div>
@@ -188,10 +150,4 @@
     <div class="footer-bottom">
         © 2026 Tienda X — Todos los derechos reservados
     </div>
-</footer>
-
-    <script src="scripts/menu.js"></script>
-    <script src="scripts/filtros.js"></script>
-
-</body>
-</html>
+<

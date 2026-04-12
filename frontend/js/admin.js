@@ -91,32 +91,49 @@ async function cargarEstadisticas() {
         const res  = await fetch(`${ADMIN_API}/admin/estadisticas`, { headers: headers() });
         const data = await res.json();
 
+        // Actualizar badge de pedidos pendientes en sidebar
+        const badge = document.getElementById('badge-pendientes');
+        if (badge) badge.textContent = data.pedidosPendientes || '0';
+
+        const ticketProm = data.totalPedidos > 0
+            ? Math.round(data.ingresoTotal / data.totalPedidos)
+            : 0;
+
         document.getElementById('stats-grid').innerHTML = `
-            <div class="stat-card">
+            <div class="stat-card verde">
+                <div class="stat-icon">💰</div>
                 <p class="stat-label">Ingresos totales</p>
                 <p class="stat-valor">${formatPeso(data.ingresoTotal)}</p>
-                <p class="stat-sub">Todos los pedidos</p>
+                <p class="stat-sub">${data.totalPedidos} pedidos en total</p>
             </div>
-            <div class="stat-card">
-                <p class="stat-label">Total pedidos</p>
+            <div class="stat-card azul">
+                <div class="stat-icon">🛍️</div>
+                <p class="stat-label">Pedidos</p>
                 <p class="stat-valor">${data.totalPedidos}</p>
-                <p class="stat-sub">${data.pedidosPendientes} pendientes · ${data.pedidosEnviados} enviados · ${data.pedidosEntregados} entregados</p>
+                <p class="stat-sub">
+                    <span class="down">${data.pedidosPendientes} pendientes</span> ·
+                    ${data.pedidosEnviados} enviados ·
+                    <span class="up">${data.pedidosEntregados} entregados</span>
+                </p>
+            </div>
+            <div class="stat-card amber">
+                <div class="stat-icon">🎫</div>
+                <p class="stat-label">Ticket promedio</p>
+                <p class="stat-valor">${formatPeso(ticketProm)}</p>
+                <p class="stat-sub">Por pedido realizado</p>
             </div>
             <div class="stat-card">
+                <div class="stat-icon">👥</div>
                 <p class="stat-label">Usuarios</p>
                 <p class="stat-valor">${data.totalUsuarios}</p>
-                <p class="stat-sub">Registrados</p>
-            </div>
-            <div class="stat-card">
-                <p class="stat-label">Reseñas</p>
-                <p class="stat-valor">${data.totalResenas}</p>
-                <p class="stat-sub">En todos los productos</p>
+                <p class="stat-sub">${data.totalResenas} reseñas publicadas</p>
             </div>`;
 
-        // Gráfico de ventas
+        // Gráfico mejorado
         const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-        const labels = data.ventasPorMes.map(v => `${meses[v._id.mes - 1]} ${v._id.año}`);
+        const labels  = data.ventasPorMes.map(v => `${meses[v._id.mes - 1]} ${String(v._id.año).slice(-2)}`);
         const totales = data.ventasPorMes.map(v => v.total);
+        const pedidosM = data.ventasPorMes.map(v => v.cantidad);
 
         const ctx = document.getElementById('chart-ventas').getContext('2d');
         if (chartVentas) chartVentas.destroy();
@@ -124,22 +141,74 @@ async function cargarEstadisticas() {
             type: 'bar',
             data: {
                 labels,
-                datasets: [{
-                    label: 'Ingresos (COP)',
-                    data: totales,
-                    backgroundColor: 'rgba(17,17,17,0.08)',
-                    borderColor: '#111',
-                    borderWidth: 2,
-                    borderRadius: 6
-                }]
+                datasets: [
+                    {
+                        label: 'Ingresos COP',
+                        data: totales,
+                        backgroundColor: 'rgba(17,17,16,0.07)',
+                        borderColor: '#111110',
+                        borderWidth: 1.5,
+                        borderRadius: 5,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Pedidos',
+                        data: pedidosM,
+                        type: 'line',
+                        borderColor: '#d97706',
+                        backgroundColor: 'rgba(217,119,6,0.08)',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#d97706',
+                        tension: 0.35,
+                        yAxisID: 'y2',
+                        fill: true
+                    }
+                ]
             },
             options: {
                 responsive: true,
-                plugins: { legend: { display: false } },
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: '#111110',
+                        titleColor: '#f0f0f0',
+                        bodyColor: '#a8a8b0',
+                        borderColor: '#252528',
+                        borderWidth: 1,
+                        padding: 10,
+                        callbacks: {
+                            label: ctx => ctx.dataset.label === 'Ingresos COP'
+                                ? ` $${ctx.parsed.y.toLocaleString('es-CO')}`
+                                : ` ${ctx.parsed.y} pedidos`
+                        }
+                    }
+                },
                 scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 11 }, color: '#a8a8b0' }
+                    },
                     y: {
-                        beginAtZero: true,
-                        ticks: { callback: v => '$' + (v/1000).toFixed(0) + 'k' }
+                        position: 'left',
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: {
+                            callback: v => '$' + (v/1000).toFixed(0) + 'k',
+                            font: { size: 11, family: 'DM Mono' },
+                            color: '#a8a8b0'
+                        }
+                    },
+                    y2: {
+                        position: 'right',
+                        grid: { display: false },
+                        ticks: {
+                            font: { size: 11 },
+                            color: '#d97706',
+                            stepSize: 1
+                        }
                     }
                 }
             }
@@ -147,6 +216,8 @@ async function cargarEstadisticas() {
 
     } catch (err) {
         console.error('Error cargando estadísticas:', err);
+        document.getElementById('stats-grid').innerHTML =
+            '<div class="stat-card"><p class="stat-label">Error al cargar</p></div>';
     }
 }
 
@@ -168,41 +239,52 @@ async function cargarPedidos() {
         const res     = await fetch(`${ADMIN_API}/admin/pedidos`, { headers: headers() });
         const pedidos = await res.json();
         const tbody   = document.getElementById('tbody-pedidos');
+        const count   = document.getElementById('count-pedidos');
+
+        if (count) count.textContent = `${pedidos.length} registros`;
 
         if (!pedidos.length) {
-            tbody.innerHTML = '<tr><td colspan="8" class="vacio">No hay pedidos aún</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8"><div class="vacio"><div class="vacio-icon">🛍️</div>No hay pedidos aún</div></td></tr>';
             return;
         }
 
         tbody.innerHTML = pedidos.map(p => {
             const total = p.items.reduce((a,i) => a + i.precio * i.cantidad, 0);
-            const prods = p.items.map(i => `${i.nombre} x${i.cantidad}`).join(', ');
+            const prods = p.items.map(i => `${i.nombre} ×${i.cantidad}`).join(', ');
+            const ciudadEnvio = p.envio?.ciudad ? `<span class="td-muted">📍 ${p.envio.ciudad}</span>` : '';
             return `
             <tr>
-                <td><code style="font-size:0.78rem;">#${p._id.toString().slice(-6).toUpperCase()}</code></td>
                 <td>
-                    <strong>${p.usuario?.nombre || 'N/A'}</strong>
-                    <br><span style="font-size:0.75rem;color:#888;">${p.usuario?.email || ''}</span>
+                    <code style="font-family:'DM Mono',monospace;font-size:0.72rem;background:#f5f4f1;padding:2px 6px;border-radius:4px;">#${p._id.toString().slice(-6).toUpperCase()}</code>
                 </td>
-                <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${prods}">${prods}</td>
-                <td><strong>${formatPeso(total)}</strong></td>
-                <td>${p.metodoPago || '—'}</td>
-                <td><span class="badge ${p.estado}">${p.estado}</span></td>
-                <td>${formatFecha(p.fecha)}</td>
                 <td>
-                    <select class="estado-select" onchange="cambiarEstado('${p._id}', this.value)">
-                        <option value="pendiente"  ${p.estado==='pendiente' ?'selected':''}>Pendiente</option>
-                        <option value="enviado"    ${p.estado==='enviado'   ?'selected':''}>Enviado</option>
-                        <option value="entregado"  ${p.estado==='entregado' ?'selected':''}>Entregado</option>
-                    </select>
-                    <div style="display:flex;gap:4px;margin-top:6px;">
-                        <input type="text" placeholder="N° guía..."
-                            value="${p.tracking || ''}"
-                            id="tracking-${p._id}"
-                            style="border:1px solid #e0e0e0;border-radius:6px;padding:4px 8px;
-                            font-size:0.78rem;outline:none;width:110px;">
-                        <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.78rem;"
-                            onclick="guardarTracking('${p._id}')">✓</button>
+                    <strong style="font-size:0.83rem;">${p.usuario?.nombre || 'N/A'}</strong>
+                    <span class="td-muted">${p.usuario?.email || ''}</span>
+                </td>
+                <td style="max-width:160px;">
+                    <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.78rem;color:#6b6b72;" title="${prods}">${prods}</span>
+                    ${ciudadEnvio}
+                </td>
+                <td>
+                    <strong style="font-family:'DM Mono',monospace;">${formatPeso(total)}</strong>
+                </td>
+                <td style="font-size:0.78rem;color:#6b6b72;">${p.metodoPago || '—'}</td>
+                <td><span class="badge ${p.estado}">${p.estado}</span></td>
+                <td style="font-size:0.78rem;color:#6b6b72;white-space:nowrap;">${formatFecha(p.fecha)}</td>
+                <td>
+                    <div style="display:flex;flex-direction:column;gap:5px;min-width:170px;">
+                        <select class="estado-select" onchange="cambiarEstado('${p._id}', this.value)">
+                            <option value="pendiente"  ${p.estado==='pendiente' ?'selected':''}>⏳ Pendiente</option>
+                            <option value="enviado"    ${p.estado==='enviado'   ?'selected':''}>🚚 Enviado</option>
+                            <option value="entregado"  ${p.estado==='entregado' ?'selected':''}>✅ Entregado</option>
+                        </select>
+                        <div class="tracking-input-wrap">
+                            <input type="text" class="tracking-input"
+                                placeholder="Nº guía..."
+                                value="${p.tracking || ''}"
+                                id="tracking-${p._id}">
+                            <button class="btn btn-sm btn-secondary" onclick="guardarTracking('${p._id}')">✓</button>
+                        </div>
                     </div>
                 </td>
             </tr>`;
@@ -255,24 +337,35 @@ async function cargarUsuarios() {
         const res      = await fetch(`${ADMIN_API}/admin/usuarios`, { headers: headers() });
         const usuarios = await res.json();
         const tbody    = document.getElementById('tbody-usuarios');
+        const count    = document.getElementById('count-usuarios');
+
+        if (count) count.textContent = `${usuarios.length} registros`;
 
         if (!usuarios.length) {
-            tbody.innerHTML = '<tr><td colspan="5" class="vacio">No hay usuarios registrados</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5"><div class="vacio"><div class="vacio-icon">👥</div>No hay usuarios registrados</div></td></tr>';
             return;
         }
 
-        tbody.innerHTML = usuarios.map(u => `
+        tbody.innerHTML = usuarios.map(u => {
+            const inicial = (u.nombre || '?').charAt(0).toUpperCase();
+            return `
             <tr>
-                <td><strong>${u.nombre}</strong></td>
-                <td>${u.email}</td>
-                <td><span class="badge ${u.rol}">${u.rol}</span></td>
-                <td>${formatFecha(u.creadoEn)}</td>
                 <td>
-                    <button class="btn btn-danger" onclick="eliminarUsuario('${u._id}','${u.nombre}')">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div style="width:32px;height:32px;border-radius:50%;background:#f5f4f1;border:1px solid #e8e7e3;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#6b6b72;flex-shrink:0;">${inicial}</div>
+                        <strong style="font-size:0.83rem;">${u.nombre}</strong>
+                    </div>
+                </td>
+                <td style="font-size:0.82rem;color:#6b6b72;">${u.email}</td>
+                <td><span class="badge ${u.rol}">${u.rol}</span></td>
+                <td style="font-size:0.78rem;color:#a8a8b0;">${formatFecha(u.creadoEn)}</td>
+                <td>
+                    <button class="btn btn-sm btn-danger" onclick="eliminarUsuario('${u._id}','${u.nombre}')">
                         Eliminar
                     </button>
                 </td>
-            </tr>`).join('');
+            </tr>`;
+        }).join('');
 
     } catch (err) {
         console.error('Error cargando usuarios:', err);
@@ -296,29 +389,48 @@ async function cargarProductos() {
         const res       = await fetch(`${ADMIN_API}/admin/productos`, { headers: headers() });
         const productos = await res.json();
         const tbody     = document.getElementById('tbody-productos');
+        const count     = document.getElementById('count-productos');
+
+        if (count) count.textContent = `${productos.length} productos`;
 
         if (!productos.length) {
-            tbody.innerHTML = '<tr><td colspan="6" class="vacio">No hay productos en la base de datos</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6"><div class="vacio"><div class="vacio-icon">👕</div>No hay productos en la base de datos</div></td></tr>';
             return;
         }
 
-        tbody.innerHTML = productos.map(p => `
+        tbody.innerHTML = productos.map(p => {
+            const stars = `<span class="stars">${'★'.repeat(p.rating)}</span><span class="stars-empty">${'☆'.repeat(5-p.rating)}</span>`;
+            const thumb = p.imagen_front
+                ? `<img class="prod-thumb" src="${p.imagen_front}" alt="${p.nombre}" onerror="this.style.display='none'">`
+                : `<div class="prod-thumb-placeholder">👕</div>`;
+            const generoBadge = { hombre:'🧔', mujer:'👩', niño:'👦' };
+            return `
             <tr>
                 <td>
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        ${p.imagen_front ? `<img src="${p.imagen_front}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid #eee;">` : '<div style="width:40px;height:40px;background:#f0f0f0;border-radius:6px;"></div>'}
-                        <strong>${p.nombre}</strong>
+                    <div class="prod-name-cell">
+                        ${thumb}
+                        <div>
+                            <strong style="font-size:0.83rem;">${p.nombre}</strong>
+                            <span class="td-muted">${p.descripcion ? p.descripcion.slice(0,40)+'…' : '—'}</span>
+                        </div>
                     </div>
                 </td>
-                <td>${p.genero}</td>
-                <td>${p.categoria}</td>
-                <td>${formatPeso(p.precio)}</td>
-                <td>${'★'.repeat(p.rating)}${'☆'.repeat(5-p.rating)}</td>
-                <td style="display:flex;gap:6px;">
-                    <button class="btn btn-secondary" onclick="editarProducto('${p._id}')">Editar</button>
-                    <button class="btn btn-danger"    onclick="eliminarProducto('${p._id}','${p.nombre}')">Eliminar</button>
+                <td style="font-size:0.82rem;">${generoBadge[p.genero] || ''} ${p.genero}</td>
+                <td>
+                    <span style="background:#f5f4f1;border:1px solid #e8e7e3;border-radius:4px;padding:2px 7px;font-size:0.72rem;color:#6b6b72;">
+                        ${p.categoria}
+                    </span>
                 </td>
-            </tr>`).join('');
+                <td style="font-family:'DM Mono',monospace;font-size:0.82rem;font-weight:500;">${formatPeso(p.precio)}</td>
+                <td style="font-size:0.82rem;">${stars}</td>
+                <td>
+                    <div style="display:flex;gap:5px;">
+                        <button class="btn btn-sm btn-secondary" onclick="editarProducto('${p._id}')">Editar</button>
+                        <button class="btn btn-sm btn-danger" onclick="eliminarProducto('${p._id}','${p.nombre}')">Eliminar</button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
 
     } catch (err) {
         console.error('Error cargando productos:', err);
@@ -416,26 +528,34 @@ async function eliminarProducto(id, nombre) {
 // ─── RESEÑAS ─────────────────────────────────
 async function cargarResenas() {
     try {
-        const res    = await fetch(`${ADMIN_API}/admin/resenas`, { headers: headers() });
+        const res     = await fetch(`${ADMIN_API}/admin/resenas`, { headers: headers() });
         const resenas = await res.json();
-        const tbody  = document.getElementById('tbody-resenas');
+        const tbody   = document.getElementById('tbody-resenas');
+        const count   = document.getElementById('count-resenas');
+
+        if (count) count.textContent = `${resenas.length} reseñas`;
 
         if (!resenas.length) {
-            tbody.innerHTML = '<tr><td colspan="6" class="vacio">No hay reseñas aún</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6"><div class="vacio"><div class="vacio-icon">⭐</div>No hay reseñas aún</div></td></tr>';
             return;
         }
 
-        tbody.innerHTML = resenas.map(r => `
+        tbody.innerHTML = resenas.map(r => {
+            const stars = `<span class="stars">${'★'.repeat(r.estrellas)}</span><span class="stars-empty">${'☆'.repeat(5-r.estrellas)}</span>`;
+            return `
             <tr>
-                <td><strong>${r.productoNombre}</strong></td>
-                <td>${r.nombreUsuario}</td>
-                <td style="color:#f59e0b;">${'★'.repeat(r.estrellas)}${'☆'.repeat(5-r.estrellas)}</td>
-                <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.comentario}">${r.comentario}</td>
-                <td>${formatFecha(r.fecha)}</td>
-                <td>
-                    <button class="btn btn-danger" onclick="eliminarResena('${r._id}')">Eliminar</button>
+                <td style="font-size:0.83rem;font-weight:500;">${r.productoNombre}</td>
+                <td style="font-size:0.82rem;color:#6b6b72;">${r.nombreUsuario}</td>
+                <td style="font-size:0.85rem;">${stars}</td>
+                <td style="max-width:220px;">
+                    <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.8rem;color:#6b6b72;" title="${r.comentario}">${r.comentario}</span>
                 </td>
-            </tr>`).join('');
+                <td style="font-size:0.78rem;color:#a8a8b0;white-space:nowrap;">${formatFecha(r.fecha)}</td>
+                <td>
+                    <button class="btn btn-sm btn-danger" onclick="eliminarResena('${r._id}')">Eliminar</button>
+                </td>
+            </tr>`;
+        }).join('');
 
     } catch (err) {
         console.error('Error cargando reseñas:', err);

@@ -214,14 +214,13 @@ if (loginForm) {
                 return;
             }
 
-            // Guardar sesión
-            localStorage.setItem("token",  data.token);
-            localStorage.setItem("nombre", data.nombre);
+            // Guardar sesión usando AuthToken utility
+            AuthToken.save(data.token, data.nombre);
 
             // Cargar carrito guardado desde MongoDB
             try {
                 const resCarrito = await fetch("http://localhost:3000/api/carrito", {
-                    headers: { "Authorization": `Bearer ${data.token}` }
+                    headers: AuthToken.getBearerHeader()
                 });
                 const itemsDB = await resCarrito.json();
                 if (Array.isArray(itemsDB) && itemsDB.length > 0) {
@@ -229,6 +228,7 @@ if (loginForm) {
                 }
             } catch (e) {}
 
+            console.log('✅ Login exitoso. Token expires:', AuthToken.getExpirationReadable());
             window.location.href = "index.html";
 
         } catch (err) {

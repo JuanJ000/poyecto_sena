@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin — Tienda X</title>
+    <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+
+<!-- ══ LOGIN ══════════════════════════════════ -->
+<div id="login-screen">
+    <div class="login-box">
+        <div class="login-logo">
+            <div class="login-logo-mark">TX</div>
+            <div class="login-logo-text">
+                Tienda X
+                <span>Panel de administrador</span>
+            </div>
+        </div>
+        <h1>Bienvenido</h1>
+        <p>Accede con tu contraseña de administrador para gestionar la tienda.</p>
+        <div class="login-field">
+            <label>Contraseña</label>
+            <input type="password" id="admin-pass" placeholder="••••••••••••"
+                onkeydown="if(event.key==='Enter') adminLogin()">
+        </div>
+        <button class="login-btn" onclick="adminLogin()">Acceder al panel</button>
+        <p id="login-error"></p>
+    </div>
+</div>
+
+<!-- ══ PANEL ══════════════════════════════════ -->
+<div id="panel">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-mark">TX</div>
+            <div class="brand-name">
+                Tienda X
+                <span>Administrador</span>
+            </div>
+        </div>
+
+        <div class="sidebar-nav">
+            <div class="sidebar-section">
+                <p class="sidebar-section-label">Principal</p>
+                <button class="nav-item activo" onclick="mostrarSeccion('estadisticas', this)">
+                    <span class="nav-icon">📊</span> Estadísticas
+                </button>
+                <button class="nav-item" onclick="mostrarSeccion('pedidos', this)">
+                    <span class="nav-icon">🛍️</span> Pedidos
+                    <span class="nav-badge" id="badge-pendientes">—</span>
+                </button>
+            </div>
+            <div class="sidebar-section">
+                <p class="sidebar-section-label">Gestión</p>
+                <button class="nav-item" onclick="mostrarSeccion('productos', this)">
+                    <span class="nav-icon">👕</span> Productos
+                </button>
+                <button class="nav-item" onclick="mostrarSeccion('usuarios', this)">
+                    <span class="nav-icon">👥</span> Usuarios
+                </button>
+                <button class="nav-item" onclick="mostrarSeccion('resenas', this)">
+                    <span class="nav-icon">⭐</span> Reseñas
+                </button>
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <button class="btn-salir" onclick="salir()">
+                <span>↩</span> Cerrar sesión
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <!-- ── ESTADÍSTICAS ── -->
+        <div class="seccion activa" id="sec-estadisticas">
+            <div class="page-header">
+                <div class="page-header-left">
+                    <h1>Estadísticas</h1>
+                    <p>Resumen general de Tienda X</p>
+                </div>
+                <div class="page-header-actions">
+                    <button class="btn btn-secondary" onclick="cargarEstadisticas()">↺ Actualizar</button>
+                    <button class="btn btn-primary" onclick="exportarVentas()">⬇ Exportar Excel</button>
+                </div>
+            </div>
+
+            <div class="stats-grid" id="stats-grid">
+                <div class="stat-card">
+                    <p class="stat-label">Cargando...</p>
+                    <p class="stat-valor">—</p>
+                </div>
+            </div>
+
+            <div class="chart-wrap">
+                <div class="chart-header">
+                    <div>
+                        <h3>Ingresos por mes</h3>
+                        <p>Últimos 6 meses</p>
+                    </div>
+                    <div class="chart-legend">
+                        <div class="chart-legend-item">
+                            <div class="chart-legend-dot" style="background:#111110"></div>
+                            Ingresos COP
+                        </div>
+                    </div>
+                </div>
+                <canvas id="chart-ventas"></canvas>
+            </div>
+        </div>
+
+        <!-- ── PEDIDOS ── -->
+        <div class="seccion" id="sec-pedidos">
+            <div class="page-header">
+                <div class="page-header-left">
+                    <h1>Pedidos</h1>
+                    <p>Gestiona y actualiza el estado de cada pedido</p>
+                </div>
+                <div class="page-header-actions">
+                    <input class="buscar-input" type="text" placeholder="Buscar pedido..."
+                        oninput="filtrarTabla(this,'tabla-pedidos')">
+                </div>
+            </div>
+            <div class="tabla-wrap">
+                <div class="tabla-toolbar">
+                    <h3>Todos los pedidos</h3>
+                    <span class="tabla-count" id="count-pedidos">—</span>
+                </div>
+                <table id="tabla-pedidos">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Cliente</th>
+                            <th>Productos</th>
+                            <th>Total</th>
+                            <th>Pago</th>
+                            <th>Estado</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-pedidos">
+                        <tr><td colspan="8" class="vacio">Cargando pedidos...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ── PRODUCTOS ── -->
+        <div class="seccion" id="sec-productos">
+            <div class="page-header">
+                <div class="page-header-left">
+                    <h1>Productos</h1>
+                    <p>Gestiona el catálogo de la tienda</p>
+                </div>
+                <div class="page-header-actions">
+                    <input class="buscar-input" type="text" placeholder="Buscar producto..."
+                        oninput="filtrarTabla(this,'tabla-productos')">
+                    <button class="btn btn-primary" onclick="abrirModalProducto()">+ Agregar</button>
+                </div>
+            </div>
+            <div class="tabla-wrap">
+                <div class="tabla-toolbar">
+                    <h3>Catálogo</h3>
+                    <span class="tabla-count" id="count-productos">—</span>
+                </div>
+                <table id="tabla-productos">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Género</th>
+                            <th>Categoría</th>
+                            <th>Precio</th>
+                            <th>Rating</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-productos">
+                        <tr><td colspan="6" class="vacio">Cargando productos...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ── USUARIOS ── -->
+        <div class="seccion" id="sec-usuarios">
+            <div class="page-header">
+                <div class="page-header-left">
+                    <h1>Usuarios</h1>
+                    <p>Usuarios registrados en la tienda</p>
+                </div>
+                <div class="page-header-actions">
+                    <input class="buscar-input" type="text" placeholder="Buscar usuario..."
+                        oninput="filtrarTabla(this,'tabla-usuarios')">
+                </div>
+            </div>
+            <div class="tabla-wrap">
+                <div class="tabla-toolbar">
+                    <h3>Todos los usuarios</h3>
+                    <span class="tabla-count" id="count-usuarios">—</span>
+                </div>
+                <table id="tabla-usuarios">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Email</th>
+                            <th>Rol</th>
+                            <th>Registrado</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-usuarios">
+                        <tr><td colspan="5" class="vacio">Cargando usuarios...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ── RESEÑAS ── -->
+        <div class="seccion" id="sec-resenas">
+            <div class="page-header">
+                <div class="page-header-left">
+                    <h1>Reseñas</h1>
+                    <p>Modera los comentarios de productos</p>
+                </div>
+                <div class="page-header-actions">
+                    <input class="buscar-input" type="text" placeholder="Buscar reseña..."
+                        oninput="filtrarTabla(this,'tabla-resenas')">
+                </div>
+            </div>
+            <div class="tabla-wrap">
+                <div class="tabla-toolbar">
+                    <h3>Todas las reseñas</h3>
+                    <span class="tabla-count" id="count-resenas">—</span>
+                </div>
+                <table id="tabla-resenas">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Usuario</th>
+                            <th>Puntuación</th>
+                            <th>Comentario</th>
+                            <th>Fecha</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-resenas">
+                        <tr><td colspan="6" class="vacio">Cargando reseñas...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- MODAL PRODUCTO -->
+<div class="modal-overlay" id="modal-producto">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 id="modal-titulo">Agregar producto</h3>
+            <button class="modal-close" onclick="cerrarModalProducto()">✕</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="prod-id">
+            <div class="form-grid">
+                <div class="form-grupo full">
+                    <label>Nombre del producto</label>
+                    <input type="text" id="prod-nombre" placeholder="Ej: Jeans Slim Fit Premium">
+                </div>
+                <div class="form-grupo">
+                    <label>Género</label>
+                    <select id="prod-genero">
+                        <option value="hombre">Hombre</option>
+                        <option value="mujer">Mujer</option>
+                        <option value="niño">Niño</option>
+                    </select>
+                </div>
+                <div class="form-grupo">
+                    <label>Categoría</label>
+                    <select id="prod-categoria">
+                        <option value="jeans">Jeans</option>
+                        <option value="camisetas">Camisetas</option>
+                        <option value="blusas">Blusas</option>
+                        <option value="vestidos">Vestidos</option>
+                        <option value="ropa-interior">Ropa interior</option>
+                    </select>
+                </div>
+                <div class="form-grupo">
+                    <label>Precio (COP)</label>
+                    <input type="number" id="prod-precio" placeholder="75000">
+                </div>
+                <div class="form-grupo">
+                    <label>Rating (1–5)</label>
+                    <input type="number" id="prod-rating" min="1" max="5" value="5">
+                </div>
+                <div class="form-grupo full">
+                    <label>URL imagen frontal</label>
+                    <input type="text" id="prod-img-front" placeholder="https://...">
+                </div>
+                <div class="form-grupo full">
+                    <label>URL imagen trasera</label>
+                    <input type="text" id="prod-img-back" placeholder="https://...">
+                </div>
+                <div class="form-grupo full">
+                    <label>Descripción</label>
+                    <textarea id="prod-desc" placeholder="Descripción del producto..."></textarea>
+                </div>
+            </div>
+            <p class="form-error" id="prod-error"></p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="cerrarModalProducto()">Cancelar</button>
+            <button class="btn btn-primary" onclick="guardarProducto()">Guardar producto</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="js/admin.js"></script>
+
+</body>
+</html>
