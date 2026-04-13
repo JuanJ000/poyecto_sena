@@ -66,11 +66,11 @@
                 <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
 
                     <!-- Filtro por género -->
-                    <div class="filtros" style="border:none; padding:0; margin:0;">
-                        <button class="filtro activo" data-genero="todos"   onclick="filtrarGenero(this)">Todos</button>
-                        <button class="filtro"        data-genero="mujer"   onclick="filtrarGenero(this)">Mujer</button>
-                        <button class="filtro"        data-genero="hombre"  onclick="filtrarGenero(this)">Hombre</button>
-                        <button class="filtro"        data-genero="niño"    onclick="filtrarGenero(this)">Niño</button>
+                    <div class="filtros-genero" style="border:none; padding:0; margin:0;">
+                        <button class="filtro-genero activo" data-genero="todos"   onclick="filtrarGenero(this)">Todos</button>
+                        <button class="filtro-genero"        data-genero="mujer"   onclick="filtrarGenero(this)">Mujer</button>
+                        <button class="filtro-genero"        data-genero="hombre"  onclick="filtrarGenero(this)">Hombre</button>
+                        <button class="filtro-genero"        data-genero="niño"    onclick="filtrarGenero(this)">Niño</button>
                     </div>
 
                     <!-- Ordenar -->
@@ -139,17 +139,50 @@
     <script src="js/menu.js"></script>
     <script src="js/carrito-add.js"></script>
     <script>
-        // Filtro por género en productos.html
-        function filtrarGenero(btn) {
+        // Filtro por género en productos.html - RECARGA desde BD
+        window.filtrarGenero = async function(btn) {
             document.querySelectorAll('[data-genero]').forEach(b => b.classList.remove('activo'));
             btn.classList.add('activo');
+            
             const genero = btn.dataset.genero;
-            const productosFiltrados = genero === 'todos'
-                ? todosLosProductos
-                : todosLosProductos.filter(p => p.genero === genero);
-            const ordenar = document.querySelector('.ordenar-select')?.value;
-            renderizarProductos(ordenarProductos(productosFiltrados, ordenar), 'all', favoritosActuales);
-        }
+            console.log(`🔄 Cambiando a género: ${genero}`);
+            
+            // Recargar productos del género seleccionado desde BD
+            const productosNuevos = await cargarProductos(genero);
+            console.log(`✅ Productos cargados del género ${genero}:`, productosNuevos.length);
+            
+            todosLosProductos = productosNuevos;
+            
+            // Resetear el select de ordenar
+            const selectOrdenar = document.querySelector('.ordenar-select');
+            const ordenar = selectOrdenar?.value || '';
+            
+            // Renderizar con el orden actual (si hay) o sin orden
+            renderizarProductos(
+                ordenar ? ordenarProductos(productosNuevos, ordenar) : productosNuevos,
+                'all',
+                favoritosActuales
+            );
+            
+            console.log(`  Orden aplicado: ${ordenar || 'ninguno'}`);
+        };
+        
+        // Listener para el select de ordenamiento - FALLBACK
+        document.addEventListener('DOMContentLoaded', () => {
+            const selectOrdenar = document.querySelector('.ordenar-select');
+            if (selectOrdenar) {
+                console.log('📋 Agregando listener al select en HTML');
+                selectOrdenar.addEventListener('change', () => {
+                    const criterio = selectOrdenar.value;
+                    if (!criterio) return;
+                    
+                    console.log(`🔄 Ordenando por: ${criterio}`);
+                    const productosOrdenados = ordenarProductos(todosLosProductos, criterio);
+                    // En productos.html siempre usamos 'all' como filtro (sin filtro de categoría)
+                    renderizarProductos(productosOrdenados, 'all', favoritosActuales);
+                });
+            }
+        });
     </script>
 
 </body>

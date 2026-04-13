@@ -1250,6 +1250,31 @@ ul {
 .filtro.activo {
     background: #000;
     color: #fff;
+}
+
+/* Estilos para los botones de género en productos.html */
+.filtro-genero {
+    padding: 10px 22px;
+    border: 1px solid #000;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 30px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.filtro-genero:hover {
+    background: #000;
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.filtro-genero.activo {
+    background: #000;
+    color: #fff;
+}
+    background: #000;
+    color: #fff;
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 

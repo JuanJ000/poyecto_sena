@@ -96,15 +96,22 @@ function cerrarSesion() {
 
 const productosReveal = document.querySelectorAll(".reveal");
 
-window.addEventListener("scroll", () => {
+window.revelarProductosVisibles = function() {
     const trigger = window.innerHeight * 0.85;
-
-    productosReveal.forEach(p => {
+    document.querySelectorAll(".reveal:not(.active)").forEach(p => {
         const top = p.getBoundingClientRect().top;
         if (top < trigger) {
             p.classList.add("active");
         }
     });
+};
+
+// Ejecutar al cargar
+window.addEventListener("load", revelarProductosVisibles);
+
+// Ejecutar al hacer scroll
+window.addEventListener("scroll", () => {
+    revelarProductosVisibles();
 });
 
 

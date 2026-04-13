@@ -33,11 +33,17 @@ let estrellasSeleccionadas = 0;
 // ─── CARGAR PRODUCTOS ────────────────────────
 // Intenta MongoDB primero, si no hay usa JSON
 async function cargarProductos(genero) {
+    console.log(`📦 Intentando cargar productos de BD para género: ${genero}`);
+    
     try {
         // 1. Intentar cargar desde MongoDB
         const res = await fetch(`${PROD_API}/productos/${genero}`);
+        console.log(`  → Respuesta de BD: ${res.status} ${res.statusText}`);
+        
         if (res.ok) {
             const data = await res.json();
+            console.log(`  ✅ BD respondió con ${data.length} productos`);
+            
             if (Array.isArray(data) && data.length > 0) {
                 return data.map((p, i) => ({
                     id:           p._id,
@@ -53,11 +59,12 @@ async function cargarProductos(genero) {
             }
         }
     } catch (e) {
-        console.warn('MongoDB no disponible, usando JSON local');
+        console.warn(`  ⚠️ BD no disponible: ${e.message}`);
     }
 
     // 2. Fallback: cargar desde JSON local
-    // Para 'todos' combinar los 3 JSONs disponibles
+    console.log(`  📄 Usando JSON local para genero=${genero}`);
+    
     if (genero === 'todos') {
         try {
             const generos = ['hombre', 'mujer', 'niño'];
@@ -70,9 +77,11 @@ async function cargarProductos(genero) {
                     } catch { return []; }
                 })
             );
-            return resultados.flat();
+            const todos = resultados.flat();
+            console.log(`  ✅ JSON local: ${todos.length} productos en total`);
+            return todos;
         } catch (e) {
-            console.error('Error cargando todos los productos:', e);
+            console.error('❌ Error cargando todos los productos:', e);
             return [];
         }
     }
@@ -82,9 +91,11 @@ async function cargarProductos(genero) {
         const res  = await fetch(`../../datos/${genero}.json`);
         if (!res.ok) throw new Error('No encontrado');
         const data = await res.json();
-        return data.productos || [];
+        const productos = data.productos || [];
+        console.log(`  ✅ JSON local: ${productos.length} productos de ${genero}`);
+        return productos;
     } catch (e) {
-        console.error(`Error cargando productos de ${genero}:`, e);
+        console.error(`❌ Error cargando productos de ${genero}:`, e);
         return [];
     }
 }
@@ -321,23 +332,34 @@ async function recargarResenasEnModal(productoNombre) {
 
 // ─── RENDERIZAR CATÁLOGO ─────────────────────
 function renderizarProductos(productos, filtro = 'all', favs = []) {
+    console.log(`🎨 Renderizando productos:`, { total: productos.length, filtro, favoritos: favs.length });
+    
     const contenedor = document.querySelector('.productos-grid');
-    if (!contenedor) return;
+    console.log('🔍 Contenedor encontrado:', !!contenedor);
+    
+    if (!contenedor) {
+        console.error('❌ No se encontró .productos-grid');
+        return;
+    }
+    
     contenedor.innerHTML = '';
 
     const filtrados = filtro === 'all'
         ? productos
         : productos.filter(p => p.categoria === filtro);
 
+    console.log(`📊 Después de filtrar:`, filtrados.length);
+
     if (filtrados.length === 0) {
         contenedor.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:#aaa;padding:2rem;">
             No hay productos en esta categoría</p>`;
+        console.log('⚠️ Sin productos para mostrar');
         return;
     }
 
     const token = localStorage.getItem('token');
 
-    filtrados.forEach(producto => {
+    filtrados.forEach((producto, idx) => {
         const stars = '★'.repeat(producto.rating) + '☆'.repeat(5 - producto.rating);
         const esFav = favs.includes(producto.nombre);
         const btnFav = token
@@ -355,7 +377,7 @@ function renderizarProductos(productos, filtro = 'all', favs = []) {
         const prodId = producto.id || producto._id;
 
         contenedor.innerHTML += `
-            <div class="producto" data-category="${producto.categoria}" data-id="${prodId}">
+            <div class="producto reveal" data-category="${producto.categoria}" data-id="${prodId}">
                 <div class="img-box" style="position:relative;">
                     <img src="${producto.imagen_front}" class="img-front" alt="${producto.nombre}">
                     <img src="${producto.imagen_back}"  class="img-back"  alt="${producto.nombre}">
@@ -371,7 +393,19 @@ function renderizarProductos(productos, filtro = 'all', favs = []) {
             </div>`;
     });
 
+    console.log('✅ Renderizado completado:', document.querySelectorAll('.producto').length, 'productos en DOM');
+
     if (token) activarBotonesFavoritos();
+    
+    // Mostrar los productos con animación (revelarProductosVisibles es definida en menu.js)
+    if (typeof revelarProductosVisibles === 'function') {
+        revelarProductosVisibles();
+    } else {
+        // Fallback: mostrar directamente si la función no está disponible
+        document.querySelectorAll('.producto.reveal:not(.active)').forEach(p => {
+            p.classList.add('active');
+        });
+    }
 }
 
 // ─── ABRIR MODAL DETALLE ─────────────────────
@@ -605,53 +639,88 @@ async function inicializar() {
     else if (urlActual.includes('ni'))     genero = 'niño';
     else if (urlActual.includes('hombre')) genero = 'hombre';
 
+    console.log('📄 Página:', urlActual, '| Género:', genero);
+
     const [productos, favs] = await Promise.all([
         cargarProductos(genero),
         obtenerFavoritos()
     ]);
 
+    console.log('✅ Productos cargados:', productos.length);
+
     todosLosProductos = productos;
     favoritosActuales  = favs;
 
     const filtroInicial = new URLSearchParams(window.location.search).get('categoria') || 'all';
+    console.log('🎯 Filtro inicial:', filtroInicial);
     renderizarProductos(productos, filtroInicial, favs);
+    console.log('📊 Productos en DOM:', document.querySelectorAll('.producto').length);
 
-    // Botones de filtro por categoría
-    document.querySelectorAll('.filtro').forEach(boton => {
-        boton.addEventListener('click', () => {
-            document.querySelectorAll('.filtro').forEach(b => b.classList.remove('activo'));
-            boton.classList.add('activo');
-            renderizarProductos(
-                ordenarProductos(productos, document.querySelector('.ordenar-select')?.value),
-                boton.getAttribute('data-filter'),
-                favoritosActuales
-            );
-        });
-    });
-
-    // Select de ordenar (para productos.html)
-    const selectOrdenar = document.querySelector('.ordenar-select, .filtros select');
-    if (selectOrdenar) {
-        selectOrdenar.addEventListener('change', () => {
-            const filtroActivo = document.querySelector('.filtro.activo')?.getAttribute('data-filter') || 'all';
-            renderizarProductos(
-                ordenarProductos(productos, selectOrdenar.value),
-                filtroActivo,
-                favoritosActuales
-            );
+    // En productos.html no agregamos listeners porque se manejan con onclick="filtrarGenero()"
+    const enProductosPage = window.location.pathname.includes('productos.html');
+    
+    if (!enProductosPage) {
+        // Botones de filtro por categoría (para hombre.html, mujer.html, niño.html)
+        document.querySelectorAll('.filtro').forEach(boton => {
+            boton.addEventListener('click', () => {
+                document.querySelectorAll('.filtro').forEach(b => b.classList.remove('activo'));
+                boton.classList.add('activo');
+                const filtroAttr = boton.getAttribute('data-filter') || boton.getAttribute('data-genero') || 'all';
+                renderizarProductos(
+                    ordenarProductos(todosLosProductos, document.querySelector('.ordenar-select')?.value),
+                    filtroAttr,
+                    favoritosActuales
+                );
+            });
         });
     }
+
+    // Select de ordenar (para todas las páginas)
+    const selectOrdenar = document.querySelector('.ordenar-select');
+    if (selectOrdenar) {
+        console.log('✅ Select de ordenar encontrado, agregando listener...');
+        selectOrdenar.addEventListener('change', () => {
+            const criterio = selectOrdenar.value;
+            console.log(`🔄 Ordenando por: ${criterio}`);
+            
+            // En productos.html, NO usar filtro de género, siempre usar 'all'
+            const enProductosPage = window.location.pathname.includes('productos.html');
+            const filtroParaUso = enProductosPage ? 'all' : (document.querySelector('.filtro.activo')?.getAttribute('data-filter') || 'all');
+            
+            console.log(`  Filtro para renderizar: ${filtroParaUso}`);
+            
+            const productosOrdenados = ordenarProductos(todosLosProductos, criterio);
+            renderizarProductos(productosOrdenados, filtroParaUso, favoritosActuales);
+            console.log(`  ✅ Productos re-renderizados: ${productosOrdenados.length}`);
+        });
+    } else {
+        console.warn('⚠️ Select de ordenar NO encontrado');
+    }
 }
+
+// ─── FUNCIÓN DEBUG GLOBAL ────────────────────
+window.verificarProductos = function() {
+    console.log('📦 Productos cargados:', todosLosProductos.length);
+    console.log('🎯 Contenedor encontrado:', !!document.querySelector('.productos-grid'));
+    console.log('👁️ Items en grilla:', document.querySelectorAll('.producto').length);
+    return { productos: todosLosProductos, items: document.querySelectorAll('.producto').length };
+};
 
 // ─── ORDENAR PRODUCTOS ───────────────────────
-function ordenarProductos(productos, criterio) {
+window.ordenarProductos = function(productos, criterio) {
+    if (!criterio) return productos;
+    
     const copia = [...productos];
     switch (criterio) {
-        case 'precio-asc':  return copia.sort((a, b) => a.precio - b.precio);
-        case 'precio-desc': return copia.sort((a, b) => b.precio - a.precio);
-        case 'recientes':   return copia.sort((a, b) => new Date(b.creadoEn || 0) - new Date(a.creadoEn || 0));
-        default:            return copia;
+        case 'precio-asc':
+            return copia.sort((a, b) => a.precio - b.precio);
+        case 'precio-desc':
+            return copia.sort((a, b) => b.precio - a.precio);
+        case 'recientes':
+            return copia.sort((a, b) => new Date(b.creadoEn || 0) - new Date(a.creadoEn || 0));
+        default:
+            return copia;
     }
-}
+};
 
 document.addEventListener('DOMContentLoaded', inicializar);
