@@ -229,6 +229,10 @@ window.publicarResena = async function(productoNombre) {
     if (!comentario || comentario.length < 5) { errorEl.textContent = 'El comentario debe tener al menos 5 caracteres'; return; }
 
     errorEl.textContent = '';
+    
+    console.log('📝 Guardando reseña:', { productoNombre, estrellas: estrellasSeleccionadas, comentario });
+    console.log('🔐 Headers:', AuthToken.getHeaders());
+    
     try {
         const res  = await fetch(`${PROD_API}/resenas`, {
             method: 'POST',
@@ -236,6 +240,8 @@ window.publicarResena = async function(productoNombre) {
             body: JSON.stringify({ productoNombre, estrellas: estrellasSeleccionadas, comentario })
         });
         const data = await res.json();
+        
+        console.log('✅ Respuesta del servidor:', res.status, data);
         
         if (!res.ok) {
             if (res.status === 401) {
@@ -247,6 +253,7 @@ window.publicarResena = async function(productoNombre) {
             } else {
                 errorEl.textContent = data.error || 'Error al publicar';
             }
+            console.error('❌ Error:', data.error);
             return;
         }
         
@@ -261,7 +268,7 @@ window.publicarResena = async function(productoNombre) {
         
         await recargarResenasEnModal(productoNombre);
     } catch (err) { 
-        console.error('Error en publicarResena:', err);
+        console.error('❌ Error en publicarResena:', err);
         errorEl.textContent = 'No se pudo conectar con el servidor';
     }
 };
@@ -360,14 +367,6 @@ function renderizarProductos(productos, filtro = 'all', favs = []) {
                 <div style="display:flex;gap:8px;margin-top:8px;">
                     <button class="cart-btn" style="flex:1;"
                         onclick="event.stopPropagation();agregarCarrito(this)">🛒 Agregar</button>
-                    <button onclick="event.stopPropagation();abrirDetalle('${prodId}')"
-                        style="flex:1;background:none;border:1.5px solid #ddd;color:#555;
-                        border-radius:6px;padding:6px;font-size:0.82rem;font-weight:600;
-                        cursor:pointer;transition:background 0.15s;"
-                        onmouseover="this.style.background='#f5f5f5'"
-                        onmouseout="this.style.background='none'">
-                        Ver detalle
-                    </button>
                 </div>
             </div>`;
     });

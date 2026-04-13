@@ -10,6 +10,7 @@ async function sincronizarCarrito(items) {
     if (!token) return;
 
     try {
+        console.log("📤 Sincronizando carrito:", items);
         await fetch(`${CARRITO_SYNC_API}/carrito`, {
             method: "PUT",
             headers: {
@@ -18,8 +19,9 @@ async function sincronizarCarrito(items) {
             },
             body: JSON.stringify({ items })
         });
+        console.log("✅ Carrito sincronizado");
     } catch (err) {
-        console.warn("No se pudo sincronizar carrito:", err);
+        console.warn("❌ No se pudo sincronizar carrito:", err);
     }
 }
 
@@ -28,63 +30,47 @@ function agregarCarrito(btn) {
     const producto = btn.closest(".producto-card") || btn.closest(".producto");
     if (!producto) return;
 
-    const nombre = producto.querySelector("h3").textContent;
-    const precio = parseInt(
-        producto.querySelector(".precio").textContent.replace(/\D/g, "")
-    );
-    const imgEl = producto.querySelector(".img-front") || producto.querySelector("img");
-    const img   = imgEl ? imgEl.src : "";
-
-    let carrito = JSON.parse(localStorage.getItem("carrito")) || [];
-    const existe = carrito.find(p => p.nombre === nombre);
-
-    if (existe) {
-        existe.cantidad++;
-    } else {
-        carrito.push({ nombre, precio, img, cantidad: 1 });
+    // Solo abrir modal, no agregar al carrito
+    const prodId = producto.getAttribute('data-id');
+    if (prodId && typeof abrirDetalle === 'function') {
+        console.log("🔍 Abriendo modal del producto:", prodId);
+        abrirDetalle(prodId);
     }
-
-    localStorage.setItem("carrito", JSON.stringify(carrito));
-    sincronizarCarrito(carrito);
-
-    // Feedback visual
-    const textoOriginal = btn.textContent;
-    btn.textContent = "✅";
-    btn.disabled    = true;
-    setTimeout(() => {
-        btn.textContent = textoOriginal;
-        btn.disabled    = false;
-    }, 800);
 }
 
-// ─── CARGAR CARRITO DESDE MONGODB ────────────
+// ─── CARGAR CARRITO DESDE MONGODB (SOLO UNA VEZ AL INICIAR) ────────────────────────
 async function cargarCarritoDesdeDB() {
     const token = localStorage.getItem("token");
-    if (!token) return;
+    if (!token) {
+        console.log("⚠️ No hay token, usando carrito local vacío");
+        return;
+    }
+
+    const carritoLocal = localStorage.getItem("carrito");
+    
+    // Si ya hay carrito en localStorage, NO cargar de BD
+    if (carritoLocal) {
+        console.log("📦 Carrito local ya existe, NO cargando de BD");
+        return;
+    }
 
     try {
+        console.log("🔄 Cargando carrito de BD...");
         const res   = await fetch(`${CARRITO_SYNC_API}/carrito`, {
             headers: { "Authorization": `Bearer ${token}` }
         });
         const items = await res.json();
 
-        if (!res.ok || !Array.isArray(items) || items.length === 0) return;
-
-        const carritoLocal = JSON.parse(localStorage.getItem("carrito")) || [];
-
-        if (carritoLocal.length === 0) {
-            localStorage.setItem("carrito", JSON.stringify(items));
-        } else {
-            items.forEach(itemDB => {
-                const existe = carritoLocal.find(p => p.nombre === itemDB.nombre);
-                if (!existe) carritoLocal.push(itemDB);
-            });
-            localStorage.setItem("carrito", JSON.stringify(carritoLocal));
-            sincronizarCarrito(carritoLocal);
+        if (!res.ok || !Array.isArray(items) || items.length === 0) {
+            console.log("📭 No hay carrito en BD");
+            return;
         }
 
+        console.log("📥 Carrito cargado de BD:", items);
+        localStorage.setItem("carrito", JSON.stringify(items));
+
     } catch (err) {
-        console.warn("No se pudo cargar carrito desde DB:", err);
+        console.warn("❌ Error cargando carrito de BD:", err);
     }
 }
 

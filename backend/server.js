@@ -5,11 +5,53 @@ const jwt        = require('jsonwebtoken');
 const cors       = require('cors');
 const nodemailer = require('nodemailer');
 const path       = require('path');
+const rateLimit  = require('express-rate-limit');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+
+// ══════════════════════════════════════════════
+// SEGURIDAD: Headers y CORS
+// ══════════════════════════════════════════════
+app.use(cors({
+    origin: ['http://localhost:3001', 'http://localhost:3000', 'http://127.0.0.1:5501', 'http://127.0.0.1:5500'],
+    credentials: true
+}));
+
+// Headers de seguridad
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    next();
+});
+
+app.use(express.json({ limit: '10mb' }));
+
+// ══════════════════════════════════════════════
+// RATE LIMITING
+// ══════════════════════════════════════════════
+const limiterLogin = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 5, // máximo 5 intentos
+    message: '❌ Demasiados intentos de login. Intenta en 15 minutos',
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+const limiterRegistro = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hora
+    max: 3, // máximo 3 registros por hora
+    message: '❌ Demasiados registros. Intenta más tarde',
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+const limiterGeneral = rateLimit({
+    windowMs: 60 * 1000, // 1 minuto
+    max: 30, // máximo 30 requests por minuto
+    message: '❌ Demasiadas solicitudes. Intenta más tarde',
+});
 
 // ══════════════════════════════════════════════
 // CONEXIÓN A MONGODB
@@ -114,9 +156,7 @@ const usuarioSchema = new mongoose.Schema({
     email:    { type: String, required: true, unique: true },
     password: { type: String, required: true },
     rol:      { type: String, default: 'usuario', enum: ['usuario', 'admin'] },
-    creadoEn: { type: Date, default: Date.now },
-    resetPasswordToken: { type: String, default: null },
-    resetPasswordExpire: { type: Date, default: null }
+    creadoEn: { type: Date, default: Date.now }
 });
 
 const pedidoSchema = new mongoose.Schema({
@@ -183,6 +223,21 @@ const cuponSchema = new mongoose.Schema({
     creadoEn:   { type: Date, default: Date.now }
 });
 
+// ─── SCHEMA: INFORME MENSUAL ─────────────────────
+const informeSchema = new mongoose.Schema({
+    mes:                { type: Number, required: true },  // 1-12
+    año:                { type: Number, required: true },
+    totalPedidos:       { type: Number, default: 0 },
+    totalUsuarios:      { type: Number, default: 0 },
+    totalResenas:       { type: Number, default: 0 },
+    pedidosPendientes:  { type: Number, default: 0 },
+    pedidosEnviados:    { type: Number, default: 0 },
+    pedidosEntregados:  { type: Number, default: 0 },
+    ingresoTotal:       { type: Number, default: 0 },
+    ventasPorMes:       [{ mes: Number, año: Number, total: Number, cantidad: Number }],
+    creadoEn:           { type: Date, default: Date.now }
+});
+
 const Usuario   = mongoose.model('Usuario',   usuarioSchema);
 const Pedido    = mongoose.model('Pedido',    pedidoSchema);
 const Direccion = mongoose.model('Direccion', direccionSchema);
@@ -191,6 +246,7 @@ const Carrito   = mongoose.model('Carrito',   carritoSchema);
 const Resena    = mongoose.model('Resena',    resenaSchema);
 const Producto  = mongoose.model('Producto',  productoSchema);
 const Cupon     = mongoose.model('Cupon',     cuponSchema);
+const Informe   = mongoose.model('Informe',   informeSchema);
 
 
 // ══════════════════════════════════════════════
@@ -277,140 +333,191 @@ async function verificarAdmin(req, res, next) {
 // ══════════════════════════════════════════════
 // RUTAS: AUTH
 // ══════════════════════════════════════════════
-app.post('/api/registrarse', async (req, res) => {
-    const { nombre, email, password } = req.body;
-    if (!nombre || !email || !password)
-        return res.status(400).json({ error: 'Todos los campos son obligatorios' });
-    const existe = await Usuario.findOne({ email });
-    if (existe) return res.status(400).json({ error: 'El email ya está registrado' });
-    const hash    = await bcrypt.hash(password, 10);
-    const usuario = new Usuario({ nombre, email, password: hash });
-    await usuario.save();
-    res.json({ mensaje: 'Cuenta creada correctamente ✅' });
-});
+// ══════════════════════════════════════════════
+// UTILIDADES DE SEGURIDAD
+// ══════════════════════════════════════════════
 
-app.post('/api/login', async (req, res) => {
-    const { email, password } = req.body;
-    const usuario = await Usuario.findOne({ email });
-    if (!usuario) return res.status(400).json({ error: 'Email o contraseña incorrectos' });
-    const valido = await bcrypt.compare(password, usuario.password);
-    if (!valido) return res.status(400).json({ error: 'Email o contraseña incorrectos' });
-    const token = jwt.sign({ id: usuario._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, nombre: usuario.nombre, rol: usuario.rol });
-});
+/**
+ * Validar fortaleza de contraseña
+ * - Mínimo 8 caracteres
+ * - Al menos 1 mayúscula
+ * - Al menos 1 número
+ * - Al menos 1 carácter especial
+ */
+function validarContraseña(password) {
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    return regex.test(password);
+}
 
-// ════════════════════════════════════════════════
-// RECUPERACIÓN DE CONTRASEÑA
-// ════════════════════════════════════════════════
-app.post('/api/forgot-password', async (req, res) => {
+/**
+ * Validar email
+ */
+function validarEmail(email) {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+}
+
+/**
+ * Sanitizar input - remover caracteres peligrosos
+ */
+function sanitizar(input) {
+    if (typeof input !== 'string') return '';
+    return input
+        .trim()
+        .replace(/[<>\"'`]/g, '') // Remover caracteres HTML
+        .slice(0, 100); // Limitar longitud
+}
+
+
+// ══════════════════════════════════════════════
+// RUTAS: AUTH CON SEGURIDAD MEJORADA
+// ══════════════════════════════════════════════
+
+app.post('/api/registrarse', limiterRegistro, async (req, res) => {
     try {
-        const { email } = req.body;
-        if (!email) return res.status(400).json({ error: 'Email requerido' });
+        let { nombre, email, password } = req.body;
+
+        // Sanitizar inputs
+        nombre = sanitizar(nombre);
+        email = sanitizar(email.toLowerCase());
+
+        // Validaciones
+        if (!nombre || nombre.length < 2) {
+            return res.status(400).json({ error: 'Nombre debe tener al menos 2 caracteres' });
+        }
+
+        if (!validarEmail(email)) {
+            return res.status(400).json({ error: 'Email no válido' });
+        }
+
+        if (!password || password.length < 6) {
+            return res.status(400).json({ error: 'Contraseña mínimo 6 caracteres' });
+        }
+
+        // Validar fortaleza (opcional - comentar si es muy estricto)
+        // if (!validarContraseña(password)) {
+        //     return res.status(400).json({ 
+        //         error: 'Contraseña débil. Necesita: mayúscula, número, carácter especial (@$!%*?&)' 
+        //     });
+        // }
+
+        // Verificar si existe
+        const existe = await Usuario.findOne({ email });
+        if (existe) {
+            return res.status(409).json({ error: 'Este email ya está registrado' });
+        }
+
+        // Hashear contraseña (rounds: 12 para mayor seguridad)
+        const hash = await bcrypt.hash(password, 12);
+        
+        const usuario = new Usuario({
+            nombre,
+            email,
+            password: hash
+        });
+
+        await usuario.save();
+
+        console.log(`✅ Nuevo usuario registrado: ${email}`);
+        res.status(201).json({ mensaje: 'Cuenta creada correctamente ✅' });
+
+    } catch (err) {
+        console.error('Error registrarse:', err.message);
+        res.status(500).json({ error: 'Error al crear cuenta' });
+    }
+});
+
+app.post('/api/login', limiterLogin, async (req, res) => {
+    try {
+        let { email, password } = req.body;
+
+        // Sanitizar
+        email = sanitizar(email.toLowerCase());
+
+        if (!email || !password) {
+            return res.status(400).json({ error: 'Email y contraseña requeridos' });
+        }
 
         const usuario = await Usuario.findOne({ email });
+        
         if (!usuario) {
-            // Por seguridad, no revelamos si el email existe
-            return res.json({ mensaje: 'Si el email existe, recibirás un correo con instrucciones' });
+            // No revelar si el email existe (por seguridad)
+            console.warn(`⚠️ Intento de login con email no existente: ${email}`);
+            return res.status(401).json({ error: 'Email o contraseña incorrectos' });
         }
 
-        // Generar token securo (32 caracteres aleatorios)
-        const token = require('crypto').randomBytes(32).toString('hex');
-        const tokenHash = require('crypto').createHash('sha256').update(token).digest('hex');
+        // Verificar contraseña
+        const esValida = await bcrypt.compare(password, usuario.password);
+        
+        if (!esValida) {
+            console.warn(`⚠️ Intento fallido de login: ${email}`);
+            return res.status(401).json({ error: 'Email o contraseña incorrectos' });
+        }
 
-        // Guardar token hasheado y fecha de expiración (1 hora)
-        usuario.resetPasswordToken = tokenHash;
-        usuario.resetPasswordExpire = new Date(Date.now() + 3600000);
-        await usuario.save();
+        // Generar JWT con expiración
+        const token = jwt.sign(
+            { id: usuario._id },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d', issuer: 'tiendax' }
+        );
 
-        // Crear link de reset
-        const resetLink = `http://localhost:8080/frontend/registrarse.html?resetToken=${token}&&email=${email}`;
-
-        // Enviar email
-        await enviarEmail({
-            to: email,
-            subject: 'Tienda X - Recuperar tu contraseña',
-            html: `
-                <h2>Recuperar Contraseña</h2>
-                <p>Hola ${usuario.nombre},</p>
-                <p>Recibimos una solicitud para recuperar tu contraseña. Haz clic en el botón a continuación para crear una nueva:</p>
-                <a href="${resetLink}" style="display:inline-block;background:#111;color:#fff;padding:12px 24px;text-decoration:none;border-radius:5px;margin:20px 0;">
-                    Cambiar Contraseña
-                </a>
-                <p>Este link es válido por <strong>1 hora</strong>.</p>
-                <p>Si no solicitaste este cambio, ignora este correo.</p>
-                <hr>
-                <p style="color:#999;font-size:0.9em;">© Tienda X - No responda a este correo</p>
-            `
+        console.log(`✅ Login exitoso: ${email}`);
+        res.json({
+            token,
+            nombre: usuario.nombre,
+            rol: usuario.rol
         });
 
-        res.json({ mensaje: 'Si el email existe, recibirás un correo con instrucciones para recuperar tu contraseña' });
     } catch (err) {
-        console.error('Error en forgot-password:', err.message);
-        res.status(500).json({ error: 'Error al procesahr la solicitud' });
+        console.error('Error login:', err.message);
+        res.status(500).json({ error: 'Error al iniciar sesión' });
     }
 });
 
-app.post('/api/reset-password', async (req, res) => {
+app.post('/api/admin/login', limiterLogin, async (req, res) => {
     try {
-        const { email, token, newPassword, confirmPassword } = req.body;
+        let { password } = req.body;
 
-        if (!email || !token || !newPassword || !confirmPassword) {
-            return res.status(400).json({ error: 'Todos los campos son requeridos' });
+        if (!password) {
+            return res.status(400).json({ error: 'Contraseña requerida' });
         }
 
-        if (newPassword !== confirmPassword) {
-            return res.status(400).json({ error: 'Las contraseñas no coinciden' });
+        // Validar contraseña admin
+        if (password !== process.env.ADMIN_PASSWORD) {
+            console.warn('⚠️ Intento fallido de login admin');
+            return res.status(401).json({ error: 'Contraseña incorrecta' });
         }
 
-        if (newPassword.length < 6) {
-            return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
+        let admin = await Usuario.findOne({ rol: 'admin' });
+        if (!admin) {
+            try {
+                const hash = await bcrypt.hash(password, 12);
+                admin = new Usuario({
+                    nombre: 'Administrador',
+                    email: 'admin@tiendax.internal',
+                    password: hash,
+                    rol: 'admin'
+                });
+                await admin.save();
+            } catch {
+                admin = await Usuario.findOne({ email: 'admin@tiendax.internal' });
+                if (!admin) return res.status(500).json({ error: 'Error creando admin' });
+            }
         }
 
-        // Hashear el token para comparar
-        const tokenHash = require('crypto').createHash('sha256').update(token).digest('hex');
+        const token = jwt.sign(
+            { id: admin._id },
+            process.env.JWT_SECRET,
+            { expiresIn: '1d', issuer: 'tiendax' }
+        );
 
-        // Buscar usuario con token válido y no expirado
-        const usuario = await Usuario.findOne({
-            email,
-            resetPasswordToken: tokenHash,
-            resetPasswordExpire: { $gt: Date.now() }
-        });
+        console.log('✅ Login admin exitoso');
+        res.json({ token, nombre: admin.nombre });
 
-        if (!usuario) {
-            return res.status(400).json({ error: 'Link inválido o expirado. Por favor solicita uno nuevo' });
-        }
-
-        // Actualizar contraseña
-        const salt = await bcrypt.genSalt(10);
-        usuario.password = await bcrypt.hash(newPassword, salt);
-        usuario.resetPasswordToken = null;
-        usuario.resetPasswordExpire = null;
-        await usuario.save();
-
-        res.json({ mensaje: 'Contraseña cambiada exitosamente ✅' });
     } catch (err) {
-        console.error('Error en reset-password:', err.message);
-        res.status(500).json({ error: 'Error al cambiar la contraseña' });
+        console.error('Error admin login:', err.message);
+        res.status(500).json({ error: 'Error al iniciar sesión' });
     }
-});
-
-app.post('/api/admin/login', async (req, res) => {
-    const { password } = req.body;
-    if (password !== process.env.ADMIN_PASSWORD)
-        return res.status(401).json({ error: 'Contraseña incorrecta' });
-    let admin = await Usuario.findOne({ rol: 'admin' });
-    if (!admin) {
-        try {
-            const hash = await bcrypt.hash(password, 10);
-            admin = new Usuario({ nombre: 'Administrador', email: 'admin@tiendax.internal', password: hash, rol: 'admin' });
-            await admin.save();
-        } catch {
-            admin = await Usuario.findOne({ email: 'admin@tiendax.internal' });
-            if (!admin) return res.status(500).json({ error: 'Error creando admin' });
-        }
-    }
-    const token = jwt.sign({ id: admin._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
-    res.json({ token, nombre: admin.nombre });
 });
 
 
@@ -583,17 +690,47 @@ app.get('/api/resenas/:productoNombre', async (req, res) => {
 });
 
 app.post('/api/resenas', verificarToken, async (req, res) => {
+    console.log('📝 POST /api/resenas - Usuario:', req.userId);
+    console.log('📦 Body recibido:', req.body);
+    
     const { productoNombre, estrellas, comentario } = req.body;
-    if (!productoNombre || !estrellas || !comentario)
+    
+    if (!productoNombre || !estrellas || !comentario) {
+        console.log('❌ Campos faltantes');
         return res.status(400).json({ error: 'Todos los campos son obligatorios' });
-    if (estrellas < 1 || estrellas > 5)
+    }
+    
+    if (estrellas < 1 || estrellas > 5) {
+        console.log('❌ Estrellas inválidas:', estrellas);
         return res.status(400).json({ error: 'Estrellas entre 1 y 5' });
+    }
+    
     const existe = await Resena.findOne({ productoNombre, usuario: req.userId });
-    if (existe) return res.status(400).json({ error: 'Ya escribiste una reseña para este producto' });
-    const usuario = await Usuario.findById(req.userId).select('nombre');
-    const resena  = new Resena({ productoNombre, usuario: req.userId, nombreUsuario: usuario.nombre, estrellas, comentario });
-    await resena.save();
-    res.json({ mensaje: 'Reseña publicada ✅', resena });
+    if (existe) {
+        console.log('⚠️ Reseña duplicada para:', productoNombre);
+        return res.status(400).json({ error: 'Ya escribiste una reseña para este producto' });
+    }
+    
+    try {
+        const usuario = await Usuario.findById(req.userId).select('nombre');
+        console.log('👤 Usuario encontrado:', usuario.nombre);
+        
+        const resena = new Resena({
+            productoNombre,
+            usuario: req.userId,
+            nombreUsuario: usuario.nombre,
+            estrellas,
+            comentario
+        });
+        
+        await resena.save();
+        console.log('✅ Reseña guardada con ID:', resena._id);
+        
+        res.json({ mensaje: 'Reseña publicada ✅', resena });
+    } catch (err) {
+        console.error('❌ Error guardando reseña:', err.message);
+        res.status(500).json({ error: 'Error al guardar la reseña' });
+    }
 });
 
 app.delete('/api/resenas/:id', verificarToken, async (req, res) => {
@@ -618,23 +755,54 @@ app.get('/api/productos/:genero', async (req, res) => {
 // ══════════════════════════════════════════════
 // RUTAS: CUPONES
 // ══════════════════════════════════════════════
-app.post('/api/cupones/validar', async (req, res) => {
-    const { codigo, total } = req.body;
-    if (!codigo) return res.status(400).json({ error: 'Ingresa un código' });
+app.post('/api/cupones/validar', limiterGeneral, async (req, res) => {
+    try {
+        let { codigo, total } = req.body;
 
-    const cupon = await Cupon.findOne({ codigo: codigo.toUpperCase() });
-    if (!cupon || !cupon.activo)
-        return res.status(404).json({ error: 'Cupón no válido o inactivo' });
-    if (cupon.expira && new Date() > cupon.expira)
-        return res.status(400).json({ error: 'Este cupón ya expiró' });
-    if (cupon.limite > 0 && cupon.usados >= cupon.limite)
-        return res.status(400).json({ error: 'Este cupón ya alcanzó su límite de usos' });
+        if (!codigo || typeof codigo !== 'string') {
+            return res.status(400).json({ error: 'Ingresa un código válido' });
+        }
 
-    const descuento = cupon.tipo === 'porcentaje'
-        ? Math.round(total * cupon.descuento / 100)
-        : cupon.descuento;
+        if (!total || typeof total !== 'number' || total < 0) {
+            return res.status(400).json({ error: 'Total no válido' });
+        }
 
-    res.json({ valido: true, descuento, tipo: cupon.tipo, valor: cupon.descuento, codigo: cupon.codigo });
+        // Sanitizar y validar código
+        codigo = sanitizar(codigo).toUpperCase();
+        
+        if (codigo.length < 2 || codigo.length > 20) {
+            return res.status(400).json({ error: 'Código de cupón no válido' });
+        }
+
+        const cupon = await Cupon.findOne({ codigo });
+        if (!cupon || !cupon.activo) {
+            return res.status(404).json({ error: 'Cupón no válido o inactivo' });
+        }
+
+        if (cupon.expira && new Date() > cupon.expira) {
+            return res.status(400).json({ error: 'Este cupón ya expiró' });
+        }
+
+        if (cupon.limite > 0 && cupon.usados >= cupon.limite) {
+            return res.status(400).json({ error: 'Este cupón ya alcanzó su límite de usos' });
+        }
+
+        const descuento = cupon.tipo === 'porcentaje'
+            ? Math.round(total * cupon.descuento / 100)
+            : cupon.descuento;
+
+        res.json({
+            valido: true,
+            descuento,
+            tipo: cupon.tipo,
+            valor: cupon.descuento,
+            codigo: cupon.codigo
+        });
+
+    } catch (err) {
+        console.error('Error validar cupón:', err.message);
+        res.status(500).json({ error: 'Error al validar cupón' });
+    }
 });
 
 
@@ -758,6 +926,90 @@ app.get('/api/admin/exportar-ventas', verificarToken, verificarAdmin, async (req
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename="ventas-tiendax.csv"');
     res.send('\uFEFF' + csv);
+});
+
+// ══════════════════════════════════════════════
+// RUTAS: INFORMES MENSUALES
+// ══════════════════════════════════════════════
+app.get('/api/admin/informes', verificarToken, verificarAdmin, async (req, res) => {
+    try {
+        const informes = await Informe.find().sort({ año: -1, mes: -1 });
+        res.json(informes);
+    } catch (err) {
+        console.error('Error obteniendo informes:', err);
+        res.status(500).json({ error: 'Error al obtener informes' });
+    }
+});
+
+app.post('/api/admin/guardar-informe', verificarToken, verificarAdmin, async (req, res) => {
+    try {
+        const { mes, año, estadisticas } = req.body;
+        
+        if (!mes || !año) {
+            return res.status(400).json({ error: 'Mes y año son requeridos' });
+        }
+
+        // Buscar si ya existe un informe para ese mes/año
+        let informe = await Informe.findOne({ mes: parseInt(mes), año: parseInt(año) });
+
+        if (informe) {
+            // Actualizar informe existente
+            Object.assign(informe, estadisticas, { mes: parseInt(mes), año: parseInt(año) });
+        } else {
+            // Crear nuevo informe
+            informe = new Informe({
+                mes: parseInt(mes),
+                año: parseInt(año),
+                ...estadisticas
+            });
+        }
+
+        await informe.save();
+        console.log(`✅ Informe guardado: ${mes}/${año}`);
+        res.json({ mensaje: 'Informe guardado correctamente', informe });
+    } catch (err) {
+        console.error('Error guardando informe:', err);
+        res.status(500).json({ error: 'Error al guardar informe' });
+    }
+});
+
+app.get('/api/admin/exportar-ventas/:mes/:año', verificarToken, verificarAdmin, async (req, res) => {
+    try {
+        const { mes, año } = req.params;
+        
+        // Obtener informe guardado
+        const informe = await Informe.findOne({ mes: parseInt(mes), año: parseInt(año) });
+        
+        if (!informe) {
+            return res.status(404).json({ error: 'No hay informe para este período' });
+        }
+
+        // Generar CSV desde los datos del informe
+        let csv = 'Informe Mensual de Ventas - Tienda X\n';
+        csv += `Mes: ${mes}/${año}\n\n`;
+        
+        csv += 'RESUMEN\n';
+        csv += `Total Ingresos,$${informe.ingresoTotal.toLocaleString('es-CO')}\n`;
+        csv += `Total Pedidos,${informe.totalPedidos}\n`;
+        csv += `Pedidos Pendientes,${informe.pedidosPendientes}\n`;
+        csv += `Pedidos Enviados,${informe.pedidosEnviados}\n`;
+        csv += `Pedidos Entregados,${informe.pedidosEntregados}\n`;
+        csv += `Total Usuarios,${informe.totalUsuarios}\n`;
+        csv += `Total Reseñas,${informe.totalResenas}\n\n`;
+        
+        csv += 'VENTAS POR MES (histórico mostrado)\n';
+        csv += 'Mes,Año,Total,Cantidad Pedidos\n';
+        informe.ventasPorMes.forEach(v => {
+            csv += `${v.mes},${v.año},$${v.total.toLocaleString('es-CO')},${v.cantidad}\n`;
+        });
+
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="informe-${mes}-${año}.csv"`);
+        res.send('\uFEFF' + csv);
+    } catch (err) {
+        console.error('Error exportando informe:', err);
+        res.status(500).json({ error: 'Error al exportar' });
+    }
 });
 
 

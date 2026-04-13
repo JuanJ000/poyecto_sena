@@ -29,6 +29,7 @@ async function adminLogin() {
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('panel').style.display = 'block';
 
+        cargarInformes();
         cargarEstadisticas();
         cargarPedidos();
         cargarUsuarios();
@@ -44,6 +45,7 @@ async function adminLogin() {
 if (adminToken) {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('panel').style.display = 'block';
+    cargarInformes();
     cargarEstadisticas();
     cargarPedidos();
     cargarUsuarios();
@@ -83,6 +85,122 @@ function formatPeso(n) {
 
 function formatFecha(f) {
     return new Date(f).toLocaleDateString('es-CO', { year:'numeric', month:'short', day:'numeric' });
+}
+
+// ─── CARGAR INFORMES MENSUALES ────────────────
+async function cargarInformes() {
+    try {
+        const res = await fetch(`${ADMIN_API}/admin/informes`, { headers: headers() });
+        const informes = await res.json();
+
+        // Llenar selectors de mes y año
+        const mesesNombres = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+        const selectMes = document.getElementById('select-mes');
+        const selectAño = document.getElementById('select-año');
+        
+        // Agrupar informes por mes y año únicos
+        const mesesSet = new Set();
+        const añosSet = new Set();
+        
+        informes.forEach(inf => {
+            mesesSet.add(inf.mes);
+            añosSet.add(inf.año);
+        });
+
+        // Actualizar select de meses
+        selectMes.innerHTML = '<option value="">Seleccionar mes...</option>';
+        Array.from(mesesSet).sort().forEach(mes => {
+            const opt = document.createElement('option');
+            opt.value = mes;
+            opt.textContent = mesesNombres[mes - 1];
+            selectMes.appendChild(opt);
+        });
+
+        // Actualizar select de años
+        selectAño.innerHTML = '<option value="">Seleccionar año...</option>';
+        Array.from(añosSet).sort((a,b) => b - a).forEach(año => {
+            const opt = document.createElement('option');
+            opt.value = año;
+            opt.textContent = año;
+            selectAño.appendChild(opt);
+        });
+
+        // Event listeners para habilitar botón exportar
+        selectMes.addEventListener('change', verificarSeleccionInforme);
+        selectAño.addEventListener('change', verificarSeleccionInforme);
+
+        console.log(`📊 ${informes.length} informes cargados`);
+    } catch (err) {
+        console.error('❌ Error cargando informes:', err);
+    }
+}
+
+function verificarSeleccionInforme() {
+    const mes = document.getElementById('select-mes').value;
+    const año = document.getElementById('select-año').value;
+    const btnExportar = document.getElementById('btn-exportar-informe');
+    
+    btnExportar.disabled = !(mes && año);
+}
+
+// ─── EXPORTAR INFORME ────────────────────────
+async function exportarInforme() {
+    const mes = document.getElementById('select-mes').value;
+    const año = document.getElementById('select-año').value;
+
+    if (!mes || !año) {
+        alert('Selecciona mes y año');
+        return;
+    }
+
+    try {
+        const res = await fetch(`${ADMIN_API}/admin/exportar-ventas/${mes}/${año}`, { 
+            headers: headers() 
+        });
+
+        if (!res.ok) {
+            alert('No hay informe para este período');
+            return;
+        }
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `informe-${mes}-${año}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        console.log(`✅ Informe ${mes}/${año} descargado`);
+    } catch (err) {
+        console.error('❌ Error descargando informe:', err);
+        alert('Error al descargar el informe');
+    }
+}
+
+// ─── GUARDAR INFORME DEL MES ACTUAL ────────────
+async function guardarInformeDelMes(estadisticas) {
+    try {
+        const hoy = new Date();
+        const mes = hoy.getMonth() + 1;
+        const año = hoy.getFullYear();
+
+        const res = await fetch(`${ADMIN_API}/admin/guardar-informe`, {
+            method: 'POST',
+            headers: headers(),
+            body: JSON.stringify({ mes, año, estadisticas })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+            console.log(`✅ Informe guardado: ${mes}/${año}`);
+            cargarInformes(); // Recargar lista de informes
+        } else {
+            console.warn('⚠️ No se guardó informe:', data.error);
+        }
+    } catch (err) {
+        console.error('❌ Error guardando informe:', err);
+    }
 }
 
 // ─── ESTADÍSTICAS ────────────────────────────
@@ -213,6 +331,9 @@ async function cargarEstadisticas() {
                 }
             }
         });
+
+        // Guardar informe del mes automáticamente
+        guardarInformeDelMes(data);
 
     } catch (err) {
         console.error('Error cargando estadísticas:', err);

@@ -85,9 +85,20 @@
                     <h1>Estadísticas</h1>
                     <p>Resumen general de Tienda X</p>
                 </div>
-                <div class="page-header-actions">
+                <div class="page-header-actions" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
                     <button class="btn btn-secondary" onclick="cargarEstadisticas()">↺ Actualizar</button>
-                    <button class="btn btn-primary" onclick="exportarVentas()">⬇ Exportar Excel</button>
+                    
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <select id="select-mes" style="padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:0.9rem;">
+                            <option value="">Seleccionar mes...</option>
+                        </select>
+                        <select id="select-año" style="padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:0.9rem;">
+                            <option value="">Seleccionar año...</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="exportarInforme()" id="btn-exportar-informe" disabled>⬇ Exportar</button>
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="exportarVentas()">⬇ Exportar Actual</button>
                 </div>
             </div>
 
