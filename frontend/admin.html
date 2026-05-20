@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin — Tienda X</title>
-    <link rel="stylesheet" href="styles/style.css">
+    <link rel="stylesheet" href="styles/admin.css">
 </head>
 <body>
 
@@ -64,6 +64,9 @@
                 </button>
                 <button class="nav-item" onclick="mostrarSeccion('resenas', this)">
                     <span class="nav-icon">⭐</span> Reseñas
+                </button>
+                <button class="nav-item" onclick="mostrarSeccion('cupones', this)">
+                    <span class="nav-icon">🏷️</span> Cupones
                 </button>
             </div>
         </div>
@@ -268,7 +271,142 @@
             </div>
         </div>
 
+        <!-- ── CUPONES ── -->
+        <div class="seccion" id="sec-cupones">
+            <div class="page-header">
+                <div class="page-header-left">
+                    <h1>Cupones de descuento</h1>
+                    <p>Crea y gestiona códigos de descuento para tus clientes</p>
+                </div>
+                <div class="page-header-actions">
+                    <button class="btn btn-primary" onclick="abrirModalCupon()">+ Nuevo cupón</button>
+                </div>
+            </div>
+
+            <!-- Tabs internos -->
+            <div style="display:flex;gap:4px;margin-bottom:1.5rem;background:var(--bg-page,#f5f4f1);border-radius:10px;padding:4px;width:fit-content;">
+                <button id="tab-cupones-lista" onclick="mostrarTabCupones('lista')"
+                    style="padding:0.45rem 1rem;border:none;border-radius:7px;font-size:0.82rem;font-weight:500;cursor:pointer;background:#fff;color:#111;font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+                    Todos los cupones
+                </button>
+                <button id="tab-cupones-frecuentes" onclick="mostrarTabCupones('frecuentes')"
+                    style="padding:0.45rem 1rem;border:none;border-radius:7px;font-size:0.82rem;font-weight:500;cursor:pointer;background:transparent;color:#888;font-family:inherit;">
+                    Clientes frecuentes
+                </button>
+            </div>
+
+            <!-- Tab: lista de cupones -->
+            <div id="tab-panel-lista">
+                <div class="tabla-wrap">
+                    <div class="tabla-toolbar">
+                        <h3>Cupones activos</h3>
+                        <span class="tabla-count" id="count-cupones">—</span>
+                    </div>
+                    <table id="tabla-cupones">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Descuento</th>
+                                <th>Tipo</th>
+                                <th>Usos</th>
+                                <th>Límite</th>
+                                <th>Expira</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-cupones">
+                            <tr><td colspan="8" class="vacio">Cargando cupones...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab: clientes frecuentes -->
+            <div id="tab-panel-frecuentes" style="display:none;">
+                <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:1.25rem;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+                    <p style="font-size:0.82rem;color:#6b6b72;margin:0;line-height:1.6;">
+                        Esta sección analiza la base de datos y muestra los <strong style="color:#111;">clientes que más han gastado</strong> en la tienda.
+                        Puedes crearles un cupón exclusivo con un solo clic.
+                    </p>
+                </div>
+                <div class="tabla-wrap">
+                    <div class="tabla-toolbar">
+                        <h3>Top clientes por gasto total</h3>
+                        <span class="tabla-count" id="count-frecuentes">—</span>
+                    </div>
+                    <table id="tabla-frecuentes">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Cliente</th>
+                                <th>Email</th>
+                                <th>Pedidos</th>
+                                <th>Total gastado</th>
+                                <th>Última compra</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-frecuentes">
+                            <tr><td colspan="7" class="vacio">Cargando clientes...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
     </main>
+</div>
+
+<!-- MODAL CUPÓN -->
+<div class="modal-overlay" id="modal-cupon">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 id="modal-cupon-titulo">Nuevo cupón</h3>
+            <button class="modal-close" onclick="cerrarModalCupon()">✕</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="cupon-id">
+            <div class="form-grid">
+                <div class="form-grupo full">
+                    <label>Código del cupón</label>
+                    <input type="text" id="cupon-codigo" placeholder="Ej: VERANO20"
+                        style="text-transform:uppercase;"
+                        oninput="this.value=this.value.toUpperCase()">
+                </div>
+                <div class="form-grupo">
+                    <label>Tipo de descuento</label>
+                    <select id="cupon-tipo" onchange="actualizarPlaceholderDescuento()">
+                        <option value="porcentaje">Porcentaje (%)</option>
+                        <option value="fijo">Monto fijo (COP)</option>
+                    </select>
+                </div>
+                <div class="form-grupo">
+                    <label>Valor del descuento</label>
+                    <input type="number" id="cupon-descuento" placeholder="Ej: 20">
+                </div>
+                <div class="form-grupo">
+                    <label>Límite de usos <span style="color:#a8a8b0;font-weight:400;">(0 = ilimitado)</span></label>
+                    <input type="number" id="cupon-limite" placeholder="0" value="0" min="0">
+                </div>
+                <div class="form-grupo">
+                    <label>Fecha de expiración <span style="color:#a8a8b0;font-weight:400;">(opcional)</span></label>
+                    <input type="date" id="cupon-expira">
+                </div>
+                <div class="form-grupo full" style="display:flex;align-items:center;gap:10px;padding:0.5rem 0;">
+                    <input type="checkbox" id="cupon-activo" checked style="width:16px;height:16px;accent-color:#111;">
+                    <label for="cupon-activo" style="font-size:0.85rem;color:#555;text-transform:none;letter-spacing:0;font-weight:400;cursor:pointer;">
+                        Cupón activo (los clientes pueden usarlo)
+                    </label>
+                </div>
+            </div>
+            <p class="form-error" id="cupon-error"></p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="cerrarModalCupon()">Cancelar</button>
+            <button class="btn btn-primary" onclick="guardarCupon()">Guardar cupón</button>
+        </div>
+    </div>
 </div>
 
 <!-- MODAL PRODUCTO -->

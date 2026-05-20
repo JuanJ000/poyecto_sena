@@ -1,0 +1,69 @@
+/* ================= CARRITO ================= */
+
+.carrito-container {
+    max-width: 1100px;
+    margin: 120px auto;
+    padding: 20px;
+}
+
+.carrito-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 40px;
+}
+
+/* Items */
+.carrito-item {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    background: #fff;
+    padding: 15px;
+    border-radius: 10px;
+    align-items: center;
+}
+
+.carrito-item img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+}
+
+.carrito-info h3 {
+    margin: 0;
+}
+
+.cantidad {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.cantidad button {
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+/* Resumen */
+.carrito-resumen {
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    height: fit-content;
+}
+
+.btn-checkout {
+    width: 100%;
+    padding: 12px;
+    background: black;
+    color: white;
+    border: none;
+    margin-top: 15px;
+}
+
+/* MOBILE */
+@media (max-width: 768px) {
+    .carrito-grid {
+        grid-template-columns: 1fr;
+    }
+}

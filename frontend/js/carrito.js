@@ -5,7 +5,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnCheckout   = document.querySelector(".btn-checkout");
     const CARRITO_API   = "http://localhost:3000/api";
 
-    let carrito = JSON.parse(localStorage.getItem("carrito")) || [];
+    let carrito        = JSON.parse(localStorage.getItem("carrito")) || [];
+    let cuponAplicado  = null;
+    let descuentoCupon = 0;
 
     // ─── INYECTAR MODAL EN EL DOM ────────────
     const modalHTML = `
@@ -36,6 +38,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
             <!-- Sección dirección: se llena dinámicamente -->
             <div id="checkout-dir-seccion"></div>
+
+            <!-- Cupón de descuento -->
+            <div style="margin-bottom:1rem;">
+                <label style="font-size:0.78rem; color:#999; display:block; margin-bottom:4px;">CUPÓN DE DESCUENTO (opcional)</label>
+                <div style="display:flex; gap:8px;">
+                    <input id="co-cupon" type="text" placeholder="Ingresa tu código"
+                        style="flex:1; border:1px solid #e0e0e0; border-radius:8px; padding:0.6rem 0.9rem;
+                        font-size:0.92rem; outline:none; text-transform:uppercase; font-family:inherit;">
+                    <button id="btn-aplicar-cupon"
+                        style="background:#111; color:#fff; border:none; border-radius:8px;
+                        padding:0.6rem 1rem; font-size:0.88rem; cursor:pointer; white-space:nowrap;">
+                        Aplicar
+                    </button>
+                </div>
+                <p id="co-cupon-msg" style="font-size:0.82rem; margin-top:5px; min-height:1.1em;"></p>
+            </div>
 
             <!-- Datos comunes -->
             <div style="display:flex; flex-direction:column; gap:0.75rem; margin-top:0.75rem;">
@@ -270,16 +288,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // Resumen de productos
-            const total = carrito.reduce((acc, p) => acc + p.precio * p.cantidad, 0);
-            document.getElementById("checkout-resumen").innerHTML = `
-                <strong style="color:#111;">Resumen del pedido</strong><br><br>
-                ${carrito.map(p => `• ${p.nombre} x${p.cantidad} — $${(p.precio * p.cantidad).toLocaleString("es-CO")}`).join("<br>")}
-                <br><br><strong style="color:#111;">Total: $${total.toLocaleString("es-CO")}</strong>`;
+            // Resumen de productos (con cupón si está activo)
+            cuponAplicado  = null;
+            descuentoCupon = 0;
+            document.getElementById("co-cupon").value = "";
+            actualizarResumenConDescuento();
 
             // Limpiar campos comunes
             document.getElementById("co-pago").value  = "";
             document.getElementById("co-notas").value = "";
+            document.getElementById("co-cupon-msg").textContent = "";
             document.getElementById("co-error").textContent = "";
             document.getElementById("btn-confirmar-pedido").disabled    = false;
             document.getElementById("btn-confirmar-pedido").textContent = "Confirmar pedido";
@@ -304,6 +322,93 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+
+    // ─── CUPÓN DE DESCUENTO ─────────────────────
+    document.getElementById("btn-aplicar-cupon").addEventListener("click", async () => {
+        const codigo  = document.getElementById("co-cupon").value.trim().toUpperCase();
+        const msgEl   = document.getElementById("co-cupon-msg");
+        const btnApl  = document.getElementById("btn-aplicar-cupon");
+
+        if (!codigo) {
+            msgEl.style.color = "#dc2626";
+            msgEl.textContent = "Ingresa un código de cupón";
+            return;
+        }
+
+        // Si ya hay un cupón aplicado, quitarlo
+        if (cuponAplicado && codigo === cuponAplicado.codigo) {
+            cuponAplicado  = null;
+            descuentoCupon = 0;
+            document.getElementById("co-cupon").value = "";
+            msgEl.style.color = "#555";
+            msgEl.textContent = "Cupón eliminado";
+            actualizarResumenConDescuento();
+            return;
+        }
+
+        btnApl.textContent = "Verificando...";
+        btnApl.disabled    = true;
+
+        try {
+            const totalBase = carrito.reduce((a, p) => a + p.precio * p.cantidad, 0);
+            const res  = await fetch(`${CARRITO_API}/cupones/validar`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ codigo, total: totalBase })
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                msgEl.style.color = "#dc2626";
+                msgEl.textContent = data.error || "Cupón no válido";
+                cuponAplicado  = null;
+                descuentoCupon = 0;
+            } else {
+                cuponAplicado  = data;
+                descuentoCupon = data.descuento;
+
+                const tipo = data.tipo === "porcentaje"
+                    ? `${data.valor}% de descuento`
+                    : `$${data.descuento.toLocaleString("es-CO")} de descuento`;
+
+                msgEl.style.color = "#16a34a";
+                msgEl.textContent = `✅ Cupón aplicado — ${tipo}`;
+                actualizarResumenConDescuento();
+            }
+        } catch {
+            msgEl.style.color = "#dc2626";
+            msgEl.textContent = "Error al verificar el cupón";
+        }
+
+        btnApl.textContent = "Aplicar";
+        btnApl.disabled    = false;
+    });
+
+    function actualizarResumenConDescuento() {
+        const totalBase     = carrito.reduce((a, p) => a + p.precio * p.cantidad, 0);
+        const totalFinal    = Math.max(0, totalBase - descuentoCupon);
+        const productosHTML = carrito.map(p =>
+            `• ${p.nombre} x${p.cantidad} — $${(p.precio * p.cantidad).toLocaleString("es-CO")}`
+        ).join("<br>");
+
+        let descuentoHTML = "";
+        if (cuponAplicado && descuentoCupon > 0) {
+            const tipo = cuponAplicado.tipo === "porcentaje"
+                ? `${cuponAplicado.valor}%`
+                : `$${descuentoCupon.toLocaleString("es-CO")}`;
+            descuentoHTML = `
+                <br><span style="color:#16a34a;">🏷 Cupón ${cuponAplicado.codigo} (${tipo}):
+                -$${descuentoCupon.toLocaleString("es-CO")}</span>`;
+        }
+
+        document.getElementById("checkout-resumen").innerHTML = `
+            <strong style="color:#111;">Resumen del pedido</strong><br><br>
+            ${productosHTML}
+            ${descuentoHTML}
+            <br><br>
+            ${descuentoCupon > 0 ? `<span style="color:#888;text-decoration:line-through;font-size:0.85rem;">Subtotal: $${totalBase.toLocaleString("es-CO")}</span><br>` : ""}
+            <strong style="color:#111;">Total: $${totalFinal.toLocaleString("es-CO")}</strong>`;
+    }
 
     // ─── CERRAR MODAL ────────────────────────
     document.getElementById("cerrar-checkout").addEventListener("click", () => {
@@ -386,10 +491,23 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             // Crear el pedido
+            // Calcular total final con descuento
+            const totalFinalPedido = Math.max(0,
+                carrito.reduce((a, p) => a + p.precio * p.cantidad, 0) - descuentoCupon
+            );
+
             const res  = await fetch(`${CARRITO_API}/pedidos`, {
                 method: "POST",
                 headers: AuthToken.getHeaders(),
-                body: JSON.stringify({ items: carrito, envio, metodoPago: pago, notas })
+                body: JSON.stringify({
+                    items: carrito,
+                    envio,
+                    metodoPago: pago,
+                    notas,
+                    cupon: cuponAplicado?.codigo || null,
+                    descuento: descuentoCupon || 0,
+                    totalFinal: totalFinalPedido
+                })
             });
 
             const data = await res.json();

@@ -31,26 +31,87 @@ app.use(express.json({ limit: '10mb' }));
 // ══════════════════════════════════════════════
 // RATE LIMITING
 // ══════════════════════════════════════════════
+// ── Mapa de IPs bloqueadas temporalmente ──────
+const ipsBloqueadas = new Map(); // ip -> { intentos, bloqueadaHasta }
+
+function registrarIntento(ip) {
+    const ahora = Date.now();
+    const registro = ipsBloqueadas.get(ip) || { intentos: 0, bloqueadaHasta: 0 };
+
+    // Si el bloqueo ya expiró, resetear
+    if (registro.bloqueadaHasta && ahora > registro.bloqueadaHasta) {
+        ipsBloqueadas.delete(ip);
+        return false;
+    }
+
+    // Si está bloqueada
+    if (registro.bloqueadaHasta && ahora < registro.bloqueadaHasta) {
+        return true;
+    }
+
+    registro.intentos++;
+
+    // Bloquear progresivamente: 3 intentos → 5 min, 6 → 30 min, 10 → 24h
+    if (registro.intentos >= 10) {
+        registro.bloqueadaHasta = ahora + 24 * 60 * 60 * 1000;
+        console.warn(`🔒 IP ${ip} bloqueada por 24h tras ${registro.intentos} intentos fallidos`);
+    } else if (registro.intentos >= 6) {
+        registro.bloqueadaHasta = ahora + 30 * 60 * 1000;
+        console.warn(`🔒 IP ${ip} bloqueada por 30 min tras ${registro.intentos} intentos`);
+    } else if (registro.intentos >= 3) {
+        registro.bloqueadaHasta = ahora + 5 * 60 * 1000;
+        console.warn(`🔒 IP ${ip} bloqueada por 5 min tras ${registro.intentos} intentos`);
+    }
+
+    ipsBloqueadas.set(ip, registro);
+    return false;
+}
+
+function estasBloqueada(ip) {
+    const registro = ipsBloqueadas.get(ip);
+    if (!registro) return false;
+    if (Date.now() < registro.bloqueadaHasta) return true;
+    ipsBloqueadas.delete(ip);
+    return false;
+}
+
+function limpiarIpEnExito(ip) {
+    ipsBloqueadas.delete(ip);
+}
+
+// Limpiar mapa cada hora para evitar memory leaks
+setInterval(() => {
+    const ahora = Date.now();
+    for (const [ip, reg] of ipsBloqueadas.entries()) {
+        if (ahora > reg.bloqueadaHasta) ipsBloqueadas.delete(ip);
+    }
+}, 60 * 60 * 1000);
+
 const limiterLogin = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 5, // máximo 5 intentos
-    message: '❌ Demasiados intentos de login. Intenta en 15 minutos',
+    windowMs: 15 * 60 * 1000,
+    max: 10,
     standardHeaders: true,
     legacyHeaders: false,
+    keyGenerator: (req) => req.ip || req.connection.remoteAddress || 'unknown',
+    handler: (req, res) => {
+        const ip = req.ip || req.connection.remoteAddress || 'unknown';
+        console.warn(`🚫 Rate limit alcanzado desde IP: ${ip}`);
+        res.status(429).json({ error: 'Demasiados intentos. Espera 15 minutos antes de volver a intentarlo.' });
+    }
 });
 
 const limiterRegistro = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hora
-    max: 3, // máximo 3 registros por hora
-    message: '❌ Demasiados registros. Intenta más tarde',
+    windowMs: 60 * 60 * 1000,
+    max: 5,
+    message: { error: 'Demasiados registros. Intenta más tarde.' },
     standardHeaders: true,
     legacyHeaders: false,
 });
 
 const limiterGeneral = rateLimit({
-    windowMs: 60 * 1000, // 1 minuto
-    max: 30, // máximo 30 requests por minuto
-    message: '❌ Demasiadas solicitudes. Intenta más tarde',
+    windowMs: 60 * 1000,
+    max: 60,
+    message: { error: 'Demasiadas solicitudes. Intenta más tarde.' },
 });
 
 // ══════════════════════════════════════════════
@@ -428,45 +489,51 @@ app.post('/api/registrarse', limiterRegistro, async (req, res) => {
 });
 
 app.post('/api/login', limiterLogin, async (req, res) => {
+    const ip = req.ip || req.connection.remoteAddress || 'unknown';
     try {
         let { email, password } = req.body;
 
+        // Verificar si la IP está bloqueada
+        if (estasBloqueada(ip)) {
+            const reg = ipsBloqueadas.get(ip);
+            const min = Math.ceil((reg.bloqueadaHasta - Date.now()) / 60000);
+            return res.status(429).json({
+                error: `Demasiados intentos fallidos. Intenta de nuevo en ${min} minuto${min !== 1 ? 's' : ''}.`
+            });
+        }
+
         // Sanitizar
-        email = sanitizar(email.toLowerCase());
+        email = sanitizar((email || '').toLowerCase());
 
         if (!email || !password) {
             return res.status(400).json({ error: 'Email y contraseña requeridos' });
         }
 
         const usuario = await Usuario.findOne({ email });
-        
+
         if (!usuario) {
-            // No revelar si el email existe (por seguridad)
-            console.warn(`⚠️ Intento de login con email no existente: ${email}`);
+            registrarIntento(ip);
             return res.status(401).json({ error: 'Email o contraseña incorrectos' });
         }
 
-        // Verificar contraseña
         const esValida = await bcrypt.compare(password, usuario.password);
-        
+
         if (!esValida) {
-            console.warn(`⚠️ Intento fallido de login: ${email}`);
+            registrarIntento(ip);
             return res.status(401).json({ error: 'Email o contraseña incorrectos' });
         }
 
-        // Generar JWT con expiración
+        // Login exitoso — limpiar bloqueo
+        limpiarIpEnExito(ip);
+        console.log(`✅ Login exitoso: ${email}`);
+
         const token = jwt.sign(
             { id: usuario._id },
             process.env.JWT_SECRET,
             { expiresIn: '7d', issuer: 'tiendax' }
         );
 
-        console.log(`✅ Login exitoso: ${email}`);
-        res.json({
-            token,
-            nombre: usuario.nombre,
-            rol: usuario.rol
-        });
+        res.json({ token, nombre: usuario.nombre, rol: usuario.rol });
 
     } catch (err) {
         console.error('Error login:', err.message);

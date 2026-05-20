@@ -698,3 +698,315 @@ async function eliminarResena(id) {
 document.getElementById('modal-producto').addEventListener('click', function(e) {
     if (e.target === this) cerrarModalProducto();
 });
+
+// ─── CUPONES ─────────────────────────────────
+
+function mostrarTabCupones(tab) {
+    const panelLista      = document.getElementById('tab-panel-lista');
+    const panelFrecuentes = document.getElementById('tab-panel-frecuentes');
+    const btnLista        = document.getElementById('tab-cupones-lista');
+    const btnFrecuentes   = document.getElementById('tab-cupones-frecuentes');
+
+    if (tab === 'lista') {
+        panelLista.style.display      = 'block';
+        panelFrecuentes.style.display = 'none';
+        btnLista.style.background     = '#fff';
+        btnLista.style.color          = '#111';
+        btnLista.style.boxShadow      = '0 1px 3px rgba(0,0,0,0.08)';
+        btnFrecuentes.style.background= 'transparent';
+        btnFrecuentes.style.color     = '#888';
+        btnFrecuentes.style.boxShadow = 'none';
+        cargarCupones();
+    } else {
+        panelLista.style.display      = 'none';
+        panelFrecuentes.style.display = 'block';
+        btnLista.style.background     = 'transparent';
+        btnLista.style.color          = '#888';
+        btnLista.style.boxShadow      = 'none';
+        btnFrecuentes.style.background= '#fff';
+        btnFrecuentes.style.color     = '#111';
+        btnFrecuentes.style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)';
+        cargarClientesFrecuentes();
+    }
+}
+
+async function cargarCupones() {
+    try {
+        const res     = await fetch(`${ADMIN_API}/admin/cupones`, { headers: headers() });
+        const cupones = await res.json();
+        const tbody   = document.getElementById('tbody-cupones');
+        const count   = document.getElementById('count-cupones');
+
+        if (count) count.textContent = `${cupones.length} cupones`;
+
+        if (!cupones.length) {
+            tbody.innerHTML = '<tr><td colspan="8"><div class="vacio"><div class="vacio-icon">🏷️</div>No hay cupones creados aún</div></td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = cupones.map(c => {
+            const uso = c.limite > 0
+                ? `${c.usados}/${c.limite}`
+                : `${c.usados} / ∞`;
+            const porcentajeUso = c.limite > 0
+                ? Math.round((c.usados / c.limite) * 100)
+                : 0;
+            const expira = c.expira
+                ? new Date(c.expira).toLocaleDateString('es-CO', { year:'numeric', month:'short', day:'numeric' })
+                : '—';
+            const expirado = c.expira && new Date() > new Date(c.expira);
+            const estado = !c.activo
+                ? '<span class="badge" style="background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;">Inactivo</span>'
+                : expirado
+                ? '<span class="badge" style="background:#FCEBEB;color:#A32D2D;border:1px solid #F09595;">Expirado</span>'
+                : '<span class="badge entregado">Activo</span>';
+
+            return `
+            <tr>
+                <td>
+                    <code style="font-family:'DM Mono',monospace;font-size:0.85rem;
+                        background:#f5f4f1;padding:3px 8px;border-radius:5px;
+                        font-weight:600;letter-spacing:0.5px;">${c.codigo}</code>
+                </td>
+                <td style="font-family:'DM Mono',monospace;font-size:0.88rem;font-weight:600;">
+                    ${c.tipo === 'porcentaje' ? `${c.descuento}%` : `$${c.descuento.toLocaleString('es-CO')}`}
+                </td>
+                <td style="font-size:0.78rem;color:#6b6b72;">
+                    ${c.tipo === 'porcentaje' ? '% Porcentaje' : '$ Monto fijo'}
+                </td>
+                <td>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <span style="font-size:0.82rem;font-family:'DM Mono',monospace;">${uso}</span>
+                        ${c.limite > 0 ? `
+                        <div style="width:50px;height:4px;background:#f0efeb;border-radius:2px;overflow:hidden;">
+                            <div style="height:100%;width:${Math.min(porcentajeUso,100)}%;
+                                background:${porcentajeUso >= 90 ? '#dc2626' : porcentajeUso >= 60 ? '#d97706' : '#16a34a'};
+                                border-radius:2px;"></div>
+                        </div>` : ''}
+                    </div>
+                </td>
+                <td style="font-size:0.82rem;color:#6b6b72;">${c.limite > 0 ? c.limite : '∞ Ilimitado'}</td>
+                <td style="font-size:0.78rem;color:${expirado ? '#dc2626' : '#a8a8b0'};">${expira}</td>
+                <td>${estado}</td>
+                <td>
+                    <div style="display:flex;gap:5px;">
+                        <button class="btn btn-sm btn-secondary" onclick="editarCupon('${c._id}')">Editar</button>
+                        <button class="btn btn-sm ${c.activo ? 'btn-secondary' : 'btn-success'}"
+                            onclick="toggleCupon('${c._id}', ${c.activo})">
+                            ${c.activo ? 'Pausar' : 'Activar'}
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="eliminarCupon('${c._id}','${c.codigo}')">Eliminar</button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+
+    } catch (err) {
+        console.error('Error cargando cupones:', err);
+    }
+}
+
+async function cargarClientesFrecuentes() {
+    const tbody = document.getElementById('tbody-frecuentes');
+    const count = document.getElementById('count-frecuentes');
+
+    tbody.innerHTML = '<tr><td colspan="7"><div class="vacio">Analizando compras...</div></td></tr>';
+
+    try {
+        const res      = await fetch(`${ADMIN_API}/admin/clientes-frecuentes`, { headers: headers() });
+        const clientes = await res.json();
+
+        if (count) count.textContent = `Top ${clientes.length} clientes`;
+
+        if (!clientes.length) {
+            tbody.innerHTML = '<tr><td colspan="7"><div class="vacio"><div class="vacio-icon">👥</div>No hay pedidos registrados aún</div></td></tr>';
+            return;
+        }
+
+        const maxGasto = clientes[0]?.totalGastado || 1;
+
+        tbody.innerHTML = clientes.map((c, i) => {
+            const medalla = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}`;
+            const pct     = Math.round((c.totalGastado / maxGasto) * 100);
+            const inicial = (c.nombre || '?').charAt(0).toUpperCase();
+            const ultima  = new Date(c.ultimaCompra).toLocaleDateString('es-CO', { year:'numeric', month:'short', day:'numeric' });
+
+            return `
+            <tr>
+                <td style="font-size:${i < 3 ? '1.1' : '0.82'}rem;text-align:center;">${medalla}</td>
+                <td>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div style="width:32px;height:32px;border-radius:50%;
+                            background:${i === 0 ? '#FAEEDA' : i === 1 ? '#f0efeb' : '#f5f4f1'};
+                            display:flex;align-items:center;justify-content:center;
+                            font-size:12px;font-weight:600;
+                            color:${i === 0 ? '#854F0B' : '#6b6b72'};flex-shrink:0;">
+                            ${inicial}
+                        </div>
+                        <div>
+                            <strong style="font-size:0.83rem;">${c.nombre}</strong>
+                            <div style="width:80px;height:3px;background:#f0efeb;border-radius:2px;margin-top:3px;overflow:hidden;">
+                                <div style="height:100%;width:${pct}%;background:${i === 0 ? '#d97706' : '#111110'};border-radius:2px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+                <td style="font-size:0.78rem;color:#6b6b72;">${c.email}</td>
+                <td style="font-size:0.82rem;font-family:'DM Mono',monospace;text-align:center;">${c.totalPedidos}</td>
+                <td style="font-family:'DM Mono',monospace;font-size:0.85rem;font-weight:600;color:#111;">
+                    $${c.totalGastado.toLocaleString('es-CO')}
+                </td>
+                <td style="font-size:0.78rem;color:#a8a8b0;">${ultima}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary"
+                        onclick="crearCuponParaCliente('${c.email}', '${c.nombre}')"
+                        title="Crear cupón exclusivo para ${c.nombre}">
+                        🏷 Cupón exclusivo
+                    </button>
+                </td>
+            </tr>`;
+        }).join('');
+
+    } catch (err) {
+        console.error('Error cargando clientes frecuentes:', err);
+        tbody.innerHTML = '<tr><td colspan="7"><div class="vacio">Error al cargar los datos</div></td></tr>';
+    }
+}
+
+function crearCuponParaCliente(email, nombre) {
+    // Pre-llenar el modal de cupón con datos del cliente
+    const iniciales = nombre.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,3);
+    const codigo    = `VIP${iniciales}${Math.floor(Math.random()*100)}`;
+
+    abrirModalCupon();
+    document.getElementById('cupon-codigo').value    = codigo;
+    document.getElementById('cupon-tipo').value      = 'porcentaje';
+    document.getElementById('cupon-descuento').value = '15';
+    document.getElementById('cupon-limite').value    = '1';
+    document.getElementById('modal-cupon-titulo').textContent = `Cupón exclusivo para ${nombre}`;
+
+    // Agregar nota visual
+    const body = document.querySelector('#modal-cupon .modal-body');
+    const nota = document.createElement('div');
+    nota.id    = 'cupon-nota-cliente';
+    nota.style.cssText = 'background:#EAF3DE;border:1px solid #97C459;border-radius:8px;padding:0.75rem 1rem;margin-bottom:1rem;font-size:0.82rem;color:#3B6D11;line-height:1.5;';
+    nota.innerHTML = `<strong>Cliente:</strong> ${nombre} · <span style="color:#6b7280;">${email}</span><br>
+        Cupón pre-configurado con 15% de descuento y 1 uso. Puedes ajustar los valores antes de guardar.`;
+    body.insertBefore(nota, body.firstChild);
+}
+
+function abrirModalCupon() {
+    // Limpiar nota de cliente si existe
+    const nota = document.getElementById('cupon-nota-cliente');
+    if (nota) nota.remove();
+
+    document.getElementById('modal-cupon-titulo').textContent = 'Nuevo cupón';
+    document.getElementById('cupon-id').value       = '';
+    document.getElementById('cupon-codigo').value   = '';
+    document.getElementById('cupon-tipo').value     = 'porcentaje';
+    document.getElementById('cupon-descuento').value= '';
+    document.getElementById('cupon-limite').value   = '0';
+    document.getElementById('cupon-expira').value   = '';
+    document.getElementById('cupon-activo').checked = true;
+    document.getElementById('cupon-error').textContent = '';
+    document.getElementById('modal-cupon').classList.add('abierto');
+}
+
+function cerrarModalCupon() {
+    document.getElementById('modal-cupon').classList.remove('abierto');
+    const nota = document.getElementById('cupon-nota-cliente');
+    if (nota) nota.remove();
+}
+
+async function editarCupon(id) {
+    try {
+        const res     = await fetch(`${ADMIN_API}/admin/cupones`, { headers: headers() });
+        const cupones = await res.json();
+        const c       = cupones.find(x => x._id === id);
+        if (!c) return;
+
+        abrirModalCupon();
+        document.getElementById('modal-cupon-titulo').textContent = 'Editar cupón';
+        document.getElementById('cupon-id').value        = c._id;
+        document.getElementById('cupon-codigo').value    = c.codigo;
+        document.getElementById('cupon-tipo').value      = c.tipo;
+        document.getElementById('cupon-descuento').value = c.descuento;
+        document.getElementById('cupon-limite').value    = c.limite;
+        document.getElementById('cupon-activo').checked  = c.activo;
+        if (c.expira) {
+            document.getElementById('cupon-expira').value = new Date(c.expira).toISOString().split('T')[0];
+        }
+    } catch (err) {
+        alert('Error al cargar cupón');
+    }
+}
+
+async function guardarCupon() {
+    const id      = document.getElementById('cupon-id').value;
+    const errorEl = document.getElementById('cupon-error');
+    const body    = {
+        codigo:    document.getElementById('cupon-codigo').value.trim().toUpperCase(),
+        tipo:      document.getElementById('cupon-tipo').value,
+        descuento: parseFloat(document.getElementById('cupon-descuento').value),
+        limite:    parseInt(document.getElementById('cupon-limite').value) || 0,
+        activo:    document.getElementById('cupon-activo').checked,
+        expira:    document.getElementById('cupon-expira').value || null
+    };
+
+    if (!body.codigo) { errorEl.textContent = 'El código es obligatorio'; return; }
+    if (!body.descuento || body.descuento <= 0) { errorEl.textContent = 'El descuento debe ser mayor a 0'; return; }
+    if (body.tipo === 'porcentaje' && body.descuento > 100) { errorEl.textContent = 'El porcentaje no puede superar 100%'; return; }
+
+    try {
+        const url    = id ? `${ADMIN_API}/admin/cupones/${id}` : `${ADMIN_API}/admin/cupones`;
+        const method = id ? 'PUT' : 'POST';
+        const res    = await fetch(url, { method, headers: headers(), body: JSON.stringify(body) });
+        const data   = await res.json();
+
+        if (!res.ok) { errorEl.textContent = data.error || 'Error al guardar'; return; }
+
+        cerrarModalCupon();
+        cargarCupones();
+    } catch (err) {
+        errorEl.textContent = 'No se pudo conectar con el servidor';
+    }
+}
+
+async function toggleCupon(id, activo) {
+    try {
+        await fetch(`${ADMIN_API}/admin/cupones/${id}`, {
+            method: 'PUT',
+            headers: headers(),
+            body: JSON.stringify({ activo: !activo })
+        });
+        cargarCupones();
+    } catch (err) {
+        alert('Error al actualizar cupón');
+    }
+}
+
+async function eliminarCupon(id, codigo) {
+    if (!confirm(`¿Eliminar el cupón "${codigo}"? Esta acción no se puede deshacer.`)) return;
+    try {
+        await fetch(`${ADMIN_API}/admin/cupones/${id}`, { method: 'DELETE', headers: headers() });
+        cargarCupones();
+    } catch (err) {
+        alert('Error al eliminar cupón');
+    }
+}
+
+function actualizarPlaceholderDescuento() {
+    const tipo  = document.getElementById('cupon-tipo').value;
+    const input = document.getElementById('cupon-descuento');
+    input.placeholder = tipo === 'porcentaje' ? 'Ej: 15 (15%)' : 'Ej: 20000 (COP)';
+}
+
+// Cerrar modales al hacer clic fuera
+document.getElementById('modal-cupon').addEventListener('click', function(e) {
+    if (e.target === this) cerrarModalCupon();
+});
+
+// Cargar cupones cuando se abre el panel
+if (adminToken) {
+    cargarCupones();
+}
