@@ -1,12 +1,15 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Tienda X - E-commerce Backend API",
+  "main": "server-new.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server-new.js",
+    "dev": "node server-new.js",
+    "test": "jest --detectOpenHandles",
+    "test:watch": "jest --watch"
   },
-  "keywords": [],
+  "keywords": ["ecommerce", "tienda", "api"],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
@@ -19,5 +22,9 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.3.1",
     "nodemailer": "^8.0.3"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3"
   }
 }
